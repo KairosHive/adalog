@@ -1,0 +1,255 @@
+links:
+- node_in: tableselectarray0
+  node_out: oscin0
+  slot_in: input_table
+  slot_out: message
+- node_in: tableselectarray1
+  node_out: oscin0
+  slot_in: input_table
+  slot_out: message
+- node_in: oscout0
+  node_out: table0
+  slot_in: data
+  slot_out: table
+- node_in: writecsv0
+  node_out: table1
+  slot_in: table_input
+  slot_out: table
+- node_in: writecsv0
+  node_out: tableselectarray0
+  slot_in: start
+  slot_out: output_array
+- node_in: writecsv0
+  node_out: tableselectarray1
+  slot_in: stop
+  slot_out: output_array
+- node_in: select0
+  node_out: lslclient0
+  slot_in: data
+  slot_out: out
+- node_in: table1
+  node_out: lslclient0
+  slot_in: new_entry
+  slot_out: out
+- node_in: eegheadsetdetection0
+  node_out: select0
+  slot_in: eeg_data
+  slot_out: out
+- node_in: table0
+  node_out: eegheadsetdetection0
+  slot_in: new_entry
+  slot_out: headset_status
+nodes:
+  eegheadsetdetection0:
+    _type: EEGHeadsetDetection
+    category: signal
+    gui_kwargs:
+      pos:
+      - 161
+      - -179
+      viewers:
+        headset_status:
+          collapsed: false
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+    params:
+      common:
+        autotrigger: true
+        max_frequency: 30.0
+      threshold:
+        average_value: 200.0
+        no_data_threshold: 200
+  lslclient0:
+    _type: LSLClient
+    category: inputs
+    gui_kwargs:
+      pos:
+      - -285
+      - 19
+      viewers:
+        out:
+          collapsed: false
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+    params:
+      common:
+        autotrigger: true
+        max_frequency: 30.0
+      lsl_stream:
+        refresh: false
+        source_name: Muse00:55:DA:B0:6F:60
+        stream_name: ''
+  oscin0:
+    _type: OSCIn
+    category: inputs
+    gui_kwargs:
+      pos:
+      - -55
+      - 291
+      viewers:
+        message:
+          collapsed: false
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+    params:
+      common:
+        autotrigger: true
+        max_frequency: 30.0
+      osc:
+        address: 0.0.0.0
+        clear: true
+        keep_messages: false
+        port: 5005
+  oscout0:
+    _type: OSCOut
+    category: outputs
+    gui_kwargs:
+      pos:
+      - 616
+      - -110
+      viewers: {}
+    params:
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+      osc:
+        address: localhost
+        broadcast: false
+        bundle: false
+        port: 5006
+        prefix: ''
+  select0:
+    _type: Select
+    category: array
+    gui_kwargs:
+      pos:
+      - -52
+      - -174
+      viewers:
+        out:
+          collapsed: false
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+    params:
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+      select:
+        axis: 0
+        exclude: Right AUX
+        expand_asterisk: false
+        include: ''
+  table0:
+    _type: Table
+    category: inputs
+    gui_kwargs:
+      pos:
+      - 375
+      - -180
+      viewers:
+        table:
+          collapsed: false
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+    params:
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+      table:
+        new_entry_key: /eeg_quality
+  table1:
+    _type: Table
+    category: inputs
+    gui_kwargs:
+      pos:
+      - 167
+      - 34
+      viewers:
+        table:
+          collapsed: false
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+    params:
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+      table:
+        new_entry_key: raw
+  tableselectarray0:
+    _type: TableSelectArray
+    category: misc
+    gui_kwargs:
+      pos:
+      - 188
+      - 254
+      viewers:
+        output_array:
+          collapsed: false
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+    params:
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+      selection:
+        key: /recording_start
+  tableselectarray1:
+    _type: TableSelectArray
+    category: misc
+    gui_kwargs:
+      pos:
+      - 194
+      - 459
+      viewers:
+        output_array:
+          collapsed: false
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+    params:
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+      selection:
+        key: /recording_stop
+  writecsv0:
+    _type: WriteCsv
+    category: outputs
+    gui_kwargs:
+      pos:
+      - 600
+      - 204
+      viewers: {}
+    params:
+      Write:
+        duration: 0.0
+        filename: sessions/saving_test.csv
+        start: false
+        stop: false
+        timestamps: true
+      common:
+        autotrigger: false
+        max_frequency: 30.0

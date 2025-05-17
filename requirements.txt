@@ -1,0 +1,6 @@
+goofi-pipe
+PyQt6
+oscpy
+numpy
+pandas
+pylsl
