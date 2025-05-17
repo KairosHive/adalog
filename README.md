@@ -1,4 +1,8 @@
-# 🧠 Adalog - Neurophenomenological Data Recorder
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/4dcdb86c-61b9-46f9-a337-43bb1a4265c6" alt="logo" width="200">
+</p>
+
+# Neurophenomenological Data Recorder
 
 Adalog is a Python app for recording neurophenomenological data using `goofi-pipe`. It provides an intuitive graphical interface for capturing text, drawings, and EEG signals during experimental sessions. This README covers the installation, setup, and usage of the Adalog app.
 
