@@ -129,7 +129,7 @@ class AdalogApp(QWidget):
 
         
         # Status indicator
-        self.status_label = QLabel("● OFF")
+        self.status_label = QLabel("● RECORDING OFF")
         self.status_label.setStyleSheet("color:red; font-weight:bold;")
         main.addWidget(self.status_label)
 
@@ -240,7 +240,7 @@ class AdalogApp(QWidget):
         self.editor.clear()
         self.canvas.clear()
 
-        self.status_label.setText("● ON")
+        self.status_label.setText("● RECORDING ON")
         self.status_label.setStyleSheet("color:green; font-weight:bold;")
         # send OSC message /recording to 1
         self.osc_client.send_message(b"/recording_start", [1])
