@@ -78,9 +78,9 @@ class AdalogApp(QWidget):
 
         # OSC setup (after UI is built to avoid missing attributes)
         self.osc_client = OSCClient("127.0.0.1", 5005)
-        osc_server = OSCThreadServer()
-        osc_server.listen("127.0.0.1", 5006, default=True)
-        osc_server.bind(b"/eeg_quality", self.update_eeg_quality)
+        self.osc_server = OSCThreadServer()
+        self.osc_server.listen("127.0.0.1", 5006, default=True)
+        self.osc_server.bind(b"/eeg_quality", self.update_eeg_quality)
 
         # State
         self.recording = False
@@ -332,6 +332,10 @@ class AdalogApp(QWidget):
             ts = datetime.utcnow().isoformat()
             fn = os.path.join(self.session_dir, "drawings", f"{ts}.png")
             self.canvas.image.save(fn)
+
+    def closeEvent(self, _):
+        self.osc_server.terminate_server()
+        self.osc_server.join_server()
 
 if __name__ == "__main__":
     gfi = Thread(target=Manager, kwargs=dict(filepath=Path(__file__).parent / "adalog.gfi", headless=True), daemon=True)
