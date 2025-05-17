@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (
     QTextEdit, QColorDialog, QSpinBox, QComboBox,
 )
 from PyQt6.QtGui import (
-    QPainter, QPen, QImage, QColor, QPixmap, QMouseEvent,
+    QPainter, QPen, QImage, QColor, QPixmap, QMouseEvent, QIcon
 )
 from pylsl import resolve_streams
 
@@ -72,6 +72,7 @@ class AdalogApp(QWidget):
         super().__init__()
         self.setWindowTitle("🧠 Adalog App")
         self.setGeometry(100, 100, 900, 700)
+        self.setWindowIcon(QIcon("assets/logo.png"))
 
         # Build UI (initialize self.eeg_label)
         self.initUI()
