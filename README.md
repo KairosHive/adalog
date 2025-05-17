@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/4dcdb86c-61b9-46f9-a337-43bb1a4265c6" alt="logo" width="200">
+  <img src="https://github.com/user-attachments/assets/4dcdb86c-61b9-46f9-a337-43bb1a4265c6" alt="logo" width="300">
 </p>
 
 # Neurophenomenological Data Recorder
