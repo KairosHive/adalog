@@ -7,6 +7,10 @@ links:
   node_out: lslclient0
   slot_in: data
   slot_out: out
+- node_in: table1
+  node_out: lslclient0
+  slot_in: new_entry
+  slot_out: out
 - node_in: tableselectarray0
   node_out: oscin0
   slot_in: input_table
@@ -43,10 +47,6 @@ links:
   node_out: tableselectstring0
   slot_in: fname
   slot_out: output_string
-- node_in: table1
-  node_out: sine0
-  slot_in: new_entry
-  slot_out: out
 nodes:
   eegheadsetdetection0:
     _type: EEGHeadsetDetection
