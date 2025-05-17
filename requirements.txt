@@ -4,3 +4,4 @@ oscpy
 numpy
 pandas
 pylsl
+muselsl
