@@ -1,4 +1,16 @@
 links:
+- node_in: table0
+  node_out: eegheadsetdetection0
+  slot_in: new_entry
+  slot_out: headset_status
+- node_in: select0
+  node_out: lslclient0
+  slot_in: data
+  slot_out: out
+- node_in: table1
+  node_out: lslclient0
+  slot_in: new_entry
+  slot_out: out
 - node_in: tableselectarray0
   node_out: oscin0
   slot_in: input_table
@@ -7,6 +19,10 @@ links:
   node_out: oscin0
   slot_in: input_table
   slot_out: message
+- node_in: eegheadsetdetection0
+  node_out: select0
+  slot_in: eeg_data
+  slot_out: out
 - node_in: oscout0
   node_out: table0
   slot_in: data
@@ -23,22 +39,6 @@ links:
   node_out: tableselectarray1
   slot_in: stop
   slot_out: output_array
-- node_in: select0
-  node_out: lslclient0
-  slot_in: data
-  slot_out: out
-- node_in: table1
-  node_out: lslclient0
-  slot_in: new_entry
-  slot_out: out
-- node_in: eegheadsetdetection0
-  node_out: select0
-  slot_in: eeg_data
-  slot_out: out
-- node_in: table0
-  node_out: eegheadsetdetection0
-  slot_in: new_entry
-  slot_out: headset_status
 nodes:
   eegheadsetdetection0:
     _type: EEGHeadsetDetection
@@ -246,7 +246,7 @@ nodes:
     params:
       Write:
         duration: 0.0
-        filename: sessions/saving_test.csv
+        filename: sessions/neuro.csv
         start: false
         stop: false
         timestamps: true
