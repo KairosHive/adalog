@@ -245,10 +245,19 @@ class AdalogApp(QWidget):
         self.editor.clear()
         self.canvas.clear()
 
+        # Send full path of the recording directory
+        self.osc_client.send_message(
+            b"/recording_path",
+            [os.path.join(session_folder, "neuro.csv").encode()]
+        )
+
+
         self.status_label.setText("● RECORDING ON")
         self.status_label.setStyleSheet("color:green; font-weight:bold;")
-        # send OSC message /recording to 1
+        
+        # Send OSC message /recording_start to 1
         self.osc_client.send_message(b"/recording_start", [1])
+
 
     def stop_recording(self):
         self.recording = False
@@ -330,7 +339,7 @@ class AdalogApp(QWidget):
     def save_drawing(self):
         # Called on every stroke finish
         if self.recording and self.session_dir:
-            ts = datetime.utcnow().isoformat()
+            ts = datetime.utcnow().isoformat().replace(":", "-").replace(".", "-")
             fn = os.path.join(self.session_dir, "drawings", f"{ts}.png")
             self.canvas.image.save(fn)
 

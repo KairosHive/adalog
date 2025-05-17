@@ -7,15 +7,15 @@ links:
   node_out: lslclient0
   slot_in: data
   slot_out: out
-- node_in: table1
-  node_out: lslclient0
-  slot_in: new_entry
-  slot_out: out
 - node_in: tableselectarray0
   node_out: oscin0
   slot_in: input_table
   slot_out: message
 - node_in: tableselectarray1
+  node_out: oscin0
+  slot_in: input_table
+  slot_out: message
+- node_in: tableselectstring0
   node_out: oscin0
   slot_in: input_table
   slot_out: message
@@ -39,6 +39,14 @@ links:
   node_out: tableselectarray1
   slot_in: stop
   slot_out: output_array
+- node_in: writecsv0
+  node_out: tableselectstring0
+  slot_in: fname
+  slot_out: output_string
+- node_in: table1
+  node_out: sine0
+  slot_in: new_entry
+  slot_out: out
 nodes:
   eegheadsetdetection0:
     _type: EEGHeadsetDetection
@@ -90,8 +98,8 @@ nodes:
     category: inputs
     gui_kwargs:
       pos:
-      - -55
-      - 291
+      - -56
+      - 269
       viewers:
         message:
           collapsed: false
@@ -151,6 +159,28 @@ nodes:
         exclude: Right AUX
         expand_asterisk: false
         include: ''
+  sine0:
+    _type: Sine
+    category: inputs
+    gui_kwargs:
+      pos:
+      - -349
+      - 231
+      viewers:
+        out:
+          collapsed: false
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+    params:
+      common:
+        autotrigger: true
+        max_frequency: 30.0
+      sine:
+        frequency: 1.0
+        sampling_frequency: 1000.0
   table0:
     _type: Table
     category: inputs
@@ -235,18 +265,39 @@ nodes:
         max_frequency: 30.0
       selection:
         key: /recording_stop
+  tableselectstring0:
+    _type: TableSelectString
+    category: misc
+    gui_kwargs:
+      pos:
+      - 195
+      - 655
+      viewers:
+        output_string:
+          collapsed: false
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+    params:
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+      selection:
+        key: /recording_path
   writecsv0:
     _type: WriteCsv
     category: outputs
     gui_kwargs:
       pos:
-      - 600
-      - 204
+      - 560
+      - 347
       viewers: {}
     params:
       Write:
         duration: 0.0
-        filename: sessions/neuro.csv
+        filename: output.csv
         start: false
         stop: false
         timestamps: true
