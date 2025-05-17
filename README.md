@@ -41,13 +41,7 @@ muselsl stream
 
 For other LSL-compatible devices, make sure the stream is running.
 
-### 2. Start the Goofi-Pipe patch
-Run the Goofi-Pipe patch in headless mode:
-```bash
-goofi-pipe adalog.gfi --headless 
-```
-
-### 3. Start the Adalog app
+### 2. Start the Adalog app
 Run the main Adalog application:
 ```bash
 python adalog.py
@@ -107,4 +101,4 @@ TODO
 
 ## ❤️ Acknowledgments
 
-Thanks to the Goofi-Pipe team for providing the underlying data processing framework.
+Thanks to the goofi-pipe team for providing the underlying data processing framework.

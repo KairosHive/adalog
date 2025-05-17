@@ -1,4 +1,7 @@
 import sys, os
+from pathlib import Path
+from threading import Thread
+from goofi.manager import Manager
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLineEdit, QLabel, QRadioButton, QButtonGroup,
@@ -14,6 +17,7 @@ from oscpy.client import OSCClient
 from oscpy.server import OSCThreadServer
 import pandas as pd
 from datetime import datetime
+
 
 # ── Subclass QTextEdit to emit on spacebar ────────────────────────────────────
 class SpaceTextEdit(QTextEdit):
@@ -330,6 +334,9 @@ class AdalogApp(QWidget):
             self.canvas.image.save(fn)
 
 if __name__ == "__main__":
+    gfi = Thread(target=Manager, kwargs=dict(filepath=Path(__file__).parent / "adalog.gfi", headless=True), daemon=True)
+    gfi.start()
+
     app = QApplication(sys.argv)
     window = AdalogApp()
     window.show()
