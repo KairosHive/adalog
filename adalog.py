@@ -70,6 +70,7 @@ class DrawingCanvas(QLabel):
 class AdalogApp(QWidget):
     def __init__(self):
         super().__init__()
+        self.setFixedSize(900, 800)
         self.setWindowTitle("🧠 Adalog App")
         self.setGeometry(100, 100, 900, 700)
         self.setWindowIcon(QIcon("assets/logo.png"))
@@ -138,21 +139,40 @@ class AdalogApp(QWidget):
         self.status_label.setStyleSheet("color:red; font-weight:bold;")
         main.addWidget(self.status_label)
 
-        # Subject ID & Session Type
-        row1 = QHBoxLayout()
+        # Subject ID
+        subject_row = QHBoxLayout()
         self.subject_input = QLineEdit(placeholderText="Subject ID")
-        self.session_input = QLineEdit(placeholderText="Session Type")
-        row1.addWidget(self.subject_input); row1.addWidget(self.session_input)
-        main.addLayout(row1)
+        subject_row.addWidget(QLabel("Subject ID:"))
+        subject_row.addWidget(self.subject_input)
+        main.addLayout(subject_row)
 
-        # Mode radios
-        self.mode_group = QButtonGroup(self)
-        self.text_rb = QRadioButton("Text Mode"); self.text_rb.setChecked(True)
+        # Mode radios with their own session type input
+        mode_row = QHBoxLayout()
+
+        # Text mode radio and session input
+        self.text_rb = QRadioButton("Text Mode")
+        self.text_rb.setChecked(True)
+        self.text_session_input = QLineEdit(placeholderText="Session Type (Text Mode)")
+        text_mode_layout = QVBoxLayout()
+        text_mode_layout.addWidget(self.text_rb)
+        text_mode_layout.addWidget(self.text_session_input)
+        mode_row.addLayout(text_mode_layout)
+
+        # Drawing mode radio and session input
         self.draw_rb = QRadioButton("Drawing Mode")
+        self.draw_session_input = QLineEdit(placeholderText="Session Type (Drawing Mode)")
+        draw_mode_layout = QVBoxLayout()
+        draw_mode_layout.addWidget(self.draw_rb)
+        draw_mode_layout.addWidget(self.draw_session_input)
+        mode_row.addLayout(draw_mode_layout)
+
+        # Mode button group
+        self.mode_group = QButtonGroup(self)
         self.mode_group.addButton(self.text_rb, 0)
         self.mode_group.addButton(self.draw_rb, 1)
-        row2 = QHBoxLayout(); row2.addWidget(self.text_rb); row2.addWidget(self.draw_rb)
-        main.addLayout(row2)
+
+        main.addLayout(mode_row)
+
 
         # EEG quality and LSL streams
         eeg_row = QHBoxLayout()
@@ -229,18 +249,34 @@ class AdalogApp(QWidget):
             self.color_btn.setStyleSheet(f"background-color:{color.name()};")
 
     def start_recording(self):
-        sid   = self.subject_input.text().strip()
-        stype = self.session_input.text().strip()
+        sid = self.subject_input.text().strip()
+        
+        # Determine mode and session type
+        if self.mode_group.checkedId() == 0:  # Text Mode
+            mode = "TextMode"
+            stype = self.text_session_input.text().strip()
+        else:  # Drawing Mode
+            mode = "DrawingMode"
+            stype = self.draw_session_input.text().strip()
+
         if not sid or not stype:
+            print("Subject ID and Session Type must be provided.")
             return
-        base = os.path.join("sessions", sid, stype)
-        os.makedirs(base, exist_ok=True)
+
+        # Create session folder without "drawings" by default
+        base = os.path.join("sessions", sid, mode, stype)
         ts = datetime.utcnow().isoformat().replace(":", "-").replace(".", "-")
         session_folder = os.path.join(base, ts)
-        os.makedirs(os.path.join(session_folder, "drawings"), exist_ok=True)
+        os.makedirs(session_folder, exist_ok=True)
 
+        # If in drawing mode, create the "drawings" subdirectory
+        if mode == "DrawingMode":
+            drawings_dir = os.path.join(session_folder, "drawings")
+            os.makedirs(drawings_dir, exist_ok=True)
+
+        # Set up the session directory
         self.session_dir = session_folder
-        self.recording   = True
+        self.recording = True
         self.logged_word_index = 0
         self.editor.clear()
         self.canvas.clear()
@@ -251,17 +287,18 @@ class AdalogApp(QWidget):
             [os.path.join(session_folder, "neuro.csv").encode()]
         )
 
-
         self.status_label.setText("● RECORDING ON")
         self.status_label.setStyleSheet("color:green; font-weight:bold;")
-        
+
         # Send OSC message /recording_start to 1
         self.osc_client.send_message(b"/recording_start", [1])
 
 
+
+
     def stop_recording(self):
         self.recording = False
-        self.status_label.setText("● OFF")
+        self.status_label.setText("● RECORDING OFF")
         self.status_label.setStyleSheet("color:red; font-weight:bold;")
         # send OSC message /recording to 0
         self.osc_client.send_message(b"/recording_stop", [1])
@@ -284,15 +321,20 @@ class AdalogApp(QWidget):
             self.canvas.hide()
             self.clear_btn.hide()
             self.color_btn.hide()
-            self.size_label.hide()  # Hide the "Pen Size:" label
+            self.size_label.hide()
             self.size_spin.hide()
+            self.text_session_input.setEnabled(True)
+            self.draw_session_input.setEnabled(False)
         else:  # Drawing Mode
             self.editor.hide()
             self.canvas.show()
             self.clear_btn.show()
             self.color_btn.show()
-            self.size_label.show()  # Show the "Pen Size:" label
+            self.size_label.show()
             self.size_spin.show()
+            self.text_session_input.setEnabled(False)
+            self.draw_session_input.setEnabled(True)
+
 
 
     def update_eeg_quality(self, quality):
@@ -337,11 +379,12 @@ class AdalogApp(QWidget):
             self.logged_word_index += 1
 
     def save_drawing(self):
-        # Called on every stroke finish
-        if self.recording and self.session_dir:
+        # Only save drawings if the session directory and "drawings" folder exist
+        if self.recording and self.session_dir and "DrawingMode" in self.session_dir:
             ts = datetime.utcnow().isoformat().replace(":", "-").replace(".", "-")
             fn = os.path.join(self.session_dir, "drawings", f"{ts}.png")
             self.canvas.image.save(fn)
+
 
     def closeEvent(self, _):
         self.osc_server.terminate_server()
