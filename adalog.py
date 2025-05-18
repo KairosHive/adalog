@@ -31,7 +31,7 @@ class SpaceTextEdit(QTextEdit):
 class DrawingCanvas(QLabel):
     strokeFinished = pyqtSignal()
 
-    def __init__(self, width=600, height=400, parent=None):
+    def __init__(self, width=975, height=415, parent=None):
         super().__init__(parent)
         self.setFixedSize(width, height)
         self.image = QImage(width, height, QImage.Format.Format_RGB32)
@@ -70,10 +70,16 @@ class DrawingCanvas(QLabel):
 class AdalogApp(QWidget):
     def __init__(self):
         super().__init__()
-        self.setFixedSize(900, 800)
+        self.setFixedSize(1000, 850)
         self.setWindowTitle("🧠 Adalog App")
-        self.setGeometry(100, 100, 900, 700)
         self.setWindowIcon(QIcon("assets/logo.png"))
+
+        # Center the window on the screen
+        screen_geometry = QApplication.primaryScreen().availableGeometry()
+        x = (screen_geometry.width() - self.width()) // 2
+        y = (screen_geometry.height() - self.height()) // 2
+        self.move(x, y)
+
 
         # Build UI (initialize self.eeg_label)
         self.initUI()
@@ -112,6 +118,9 @@ class AdalogApp(QWidget):
             QSpinBox {
                 font-size: 18px;
             }
+            QComboBox {
+                font-size: 16px;
+            }
         """)
 
         main = QVBoxLayout(self)
@@ -142,6 +151,7 @@ class AdalogApp(QWidget):
         # Subject ID
         subject_row = QHBoxLayout()
         self.subject_input = QLineEdit(placeholderText="Subject ID")
+        self.subject_input.editingFinished.connect(self.update_session_types)
         subject_row.addWidget(QLabel("Subject ID:"))
         subject_row.addWidget(self.subject_input)
         main.addLayout(subject_row)
@@ -152,7 +162,10 @@ class AdalogApp(QWidget):
         # Text mode radio and session input
         self.text_rb = QRadioButton("Text Mode")
         self.text_rb.setChecked(True)
-        self.text_session_input = QLineEdit(placeholderText="Session Type (Text Mode)")
+        self.text_session_input = QComboBox()
+        self.text_session_input.setEditable(True)
+        self.text_session_input.lineEdit().setPlaceholderText("Session Type (Text Mode)")
+
         text_mode_layout = QVBoxLayout()
         text_mode_layout.addWidget(self.text_rb)
         text_mode_layout.addWidget(self.text_session_input)
@@ -160,7 +173,10 @@ class AdalogApp(QWidget):
 
         # Drawing mode radio and session input
         self.draw_rb = QRadioButton("Drawing Mode")
-        self.draw_session_input = QLineEdit(placeholderText="Session Type (Drawing Mode)")
+        self.draw_session_input = QComboBox()
+        self.draw_session_input.setEditable(True)
+        self.draw_session_input.lineEdit().setPlaceholderText("Session Type (Drawing Mode)")
+
         draw_mode_layout = QVBoxLayout()
         draw_mode_layout.addWidget(self.draw_rb)
         draw_mode_layout.addWidget(self.draw_session_input)
@@ -201,10 +217,11 @@ class AdalogApp(QWidget):
         main.addWidget(self.editor)
 
         # Drawing canvas
+        # Drawing canvas
         self.canvas = DrawingCanvas()
-        # connect strokeFinished → save_png
         self.canvas.strokeFinished.connect(self.save_drawing)
         main.addWidget(self.canvas)
+
 
         # Drawing controls
         controls = QHBoxLayout()
@@ -250,32 +267,29 @@ class AdalogApp(QWidget):
 
     def start_recording(self):
         sid = self.subject_input.text().strip()
-        
-        # Determine mode and session type
+
         if self.mode_group.checkedId() == 0:  # Text Mode
             mode = "TextMode"
-            stype = self.text_session_input.text().strip()
+            stype = self.text_session_input.currentText().strip()
         else:  # Drawing Mode
             mode = "DrawingMode"
-            stype = self.draw_session_input.text().strip()
+            stype = self.draw_session_input.currentText().strip()
 
         if not sid or not stype:
             print("Subject ID and Session Type must be provided.")
             return
 
-        # Create session folder without "drawings" by default
-        base = os.path.join("sessions", sid, mode, stype)
+        # Base session path
+        base = Path("sessions") / sid / mode / stype
         ts = datetime.utcnow().isoformat().replace(":", "-").replace(".", "-")
-        session_folder = os.path.join(base, ts)
-        os.makedirs(session_folder, exist_ok=True)
+        session_folder = base / ts
+        session_folder.mkdir(parents=True, exist_ok=True)
 
-        # If in drawing mode, create the "drawings" subdirectory
+        # Create drawings folder only for DrawingMode
         if mode == "DrawingMode":
-            drawings_dir = os.path.join(session_folder, "drawings")
-            os.makedirs(drawings_dir, exist_ok=True)
+            (session_folder / "drawings").mkdir(exist_ok=True)
 
-        # Set up the session directory
-        self.session_dir = session_folder
+        self.session_dir = str(session_folder)
         self.recording = True
         self.logged_word_index = 0
         self.editor.clear()
@@ -284,16 +298,44 @@ class AdalogApp(QWidget):
         # Send full path of the recording directory
         self.osc_client.send_message(
             b"/recording_path",
-            [os.path.join(session_folder, "neuro.csv").encode()]
+            [str(session_folder / "neuro.csv").encode()]
         )
 
         self.status_label.setText("● RECORDING ON")
         self.status_label.setStyleSheet("color:green; font-weight:bold;")
 
-        # Send OSC message /recording_start to 1
         self.osc_client.send_message(b"/recording_start", [1])
 
 
+    def update_session_types(self):
+        sid = self.subject_input.text().strip()
+        base_dir = Path("sessions") / sid
+
+        # Clear existing items
+        self.text_session_input.clear()
+        self.draw_session_input.clear()
+
+        text_modes = set()
+        draw_modes = set()
+
+        # Scan for existing modes and session types
+        if base_dir.exists():
+            for mode_dir in base_dir.iterdir():
+                if mode_dir.is_dir():
+                    for session_dir in mode_dir.iterdir():
+                        if session_dir.is_dir():
+                            if mode_dir.name == "TextMode":
+                                text_modes.add(session_dir.name)
+                            elif mode_dir.name == "DrawingMode":
+                                draw_modes.add(session_dir.name)
+
+        # Populate dropdowns
+        self.text_session_input.addItems(sorted(text_modes))
+        self.draw_session_input.addItems(sorted(draw_modes))
+
+        # Allow users to type new entries
+        self.text_session_input.setEditable(True)
+        self.draw_session_input.setEditable(True)
 
 
     def stop_recording(self):
