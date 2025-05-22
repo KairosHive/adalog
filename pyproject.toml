@@ -1,0 +1,28 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[tool.black]
+line-length = 128
+
+[project.scripts]
+adalog-rec = "adalog.adalog:main"
+
+[project]
+classifiers = [
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Operating System :: OS Independent",
+]
+description = "Neurophenomenological self-logging interface"
+dynamic = ["dependencies"]
+keywords = ["signal-processing", "neurofeedback", "biofeedback", "real-time", "EEG", "ECG"]
+name = "adalog"
+readme = {file = "README.md", content-type = "text/markdown"}
+requires-python = ">=3.9"
+version = "0.1.0"

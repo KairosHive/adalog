@@ -3,13 +3,13 @@ links:
   node_out: eegheadsetdetection0
   slot_in: new_entry
   slot_out: headset_status
-- node_in: select0
-  node_out: lslclient0
-  slot_in: data
-  slot_out: out
 - node_in: table1
   node_out: lslclient0
   slot_in: new_entry
+  slot_out: out
+- node_in: select0
+  node_out: lslclient0
+  slot_in: data
   slot_out: out
 - node_in: tableselectarray0
   node_out: oscin0
@@ -23,9 +23,9 @@ links:
   node_out: oscin0
   slot_in: input_table
   slot_out: message
-- node_in: eegheadsetdetection0
+- node_in: filter0
   node_out: select0
-  slot_in: eeg_data
+  slot_in: data
   slot_out: out
 - node_in: oscout0
   node_out: table0
@@ -47,6 +47,10 @@ links:
   node_out: tableselectstring0
   slot_in: fname
   slot_out: output_string
+- node_in: eegheadsetdetection0
+  node_out: filter0
+  slot_in: eeg_data
+  slot_out: filtered_data
 nodes:
   eegheadsetdetection0:
     _type: EEGHeadsetDetection
@@ -70,13 +74,55 @@ nodes:
       threshold:
         average_value: 200.0
         no_data_threshold: 200
+  filter0:
+    _type: Filter
+    category: signal
+    gui_kwargs:
+      pos:
+      - -93
+      - -164
+      viewers:
+        filtered_data:
+          collapsed: false
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+    params:
+      bandpass:
+        apply: false
+        f_high: 50.0
+        f_low: 1.0
+        method: Causal
+        order: 3
+        padding: 0.1
+        ripple: 1.0
+        type: butterworth
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+      notch:
+        Q: 10.0
+        apply: true
+        f_center: 60.0
+        method: Causal
+        order: 1
+        padding: 0.1
+        ripple: 1.0
+        type: butterworth
+      signal:
+        buffer_size: 512
+        demean: false
+        detrend: false
+        internal_buffer: false
   lslclient0:
     _type: LSLClient
     category: inputs
     gui_kwargs:
       pos:
-      - -285
-      - 19
+      - -573
+      - -88
       viewers:
         out:
           collapsed: false
@@ -91,23 +137,23 @@ nodes:
         max_frequency: 30.0
       lsl_stream:
         refresh: false
-        source_name: Muse00:55:DA:B0:6F:60
+        source_name: Muse00:55:DA:B9:8A:4E
         stream_name: ''
   oscin0:
     _type: OSCIn
     category: inputs
     gui_kwargs:
       pos:
-      - -56
-      - 269
+      - -252
+      - 413
       viewers:
         message:
           collapsed: false
-          height: 100
+          height: 200
           log_scale_x: false
           log_scale_y: false
           viewer_idx: 0
-          width: 175
+          width: 275
     params:
       common:
         autotrigger: true
@@ -133,15 +179,15 @@ nodes:
         address: localhost
         broadcast: false
         bundle: false
-        port: 5006
+        port: 5008
         prefix: ''
   select0:
     _type: Select
     category: array
     gui_kwargs:
       pos:
-      - -52
-      - -174
+      - -357
+      - -93
       viewers:
         out:
           collapsed: false
@@ -164,8 +210,8 @@ nodes:
     category: inputs
     gui_kwargs:
       pos:
-      - -349
-      - 231
+      - -387
+      - 150
       viewers:
         out:
           collapsed: false
@@ -249,16 +295,16 @@ nodes:
     category: misc
     gui_kwargs:
       pos:
-      - 194
-      - 459
+      - 186
+      - 443
       viewers:
         output_array:
           collapsed: false
-          height: 100
+          height: 110
           log_scale_x: false
           log_scale_y: false
           viewer_idx: 0
-          width: 175
+          width: 185
     params:
       common:
         autotrigger: false
@@ -270,8 +316,8 @@ nodes:
     category: misc
     gui_kwargs:
       pos:
-      - 195
-      - 655
+      - 189
+      - 648
       viewers:
         output_string:
           collapsed: false
@@ -291,8 +337,8 @@ nodes:
     category: outputs
     gui_kwargs:
       pos:
-      - 560
-      - 347
+      - 511
+      - 450
       viewers: {}
     params:
       Write:
