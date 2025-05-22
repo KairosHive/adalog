@@ -23,13 +23,13 @@ class Eeg(BaseModality):
         self.osc_server.listen("127.0.0.1", 5008, default=True)
         self.osc_server.bind(b"/eeg_quality", self.update_eeg_quality)
 
-        # Launch Goofi patch in a thread
-        self.gfi_thread = Thread(
-            target=Manager,
-            kwargs=dict(filepath=Path(__file__).parent / "eeg.gfi", headless=True),
-            daemon=True,
-        )
-        self.gfi_thread.start()
+        # # Launch Goofi patch in a thread
+        # self.gfi_thread = Thread(
+        #     target=Manager,
+        #     kwargs=dict(filepath=Path(__file__).parent / "eeg.gfi", headless=True),
+        #     daemon=True,
+        # )
+        # self.gfi_thread.start()
 
         self.setup_ui()
 

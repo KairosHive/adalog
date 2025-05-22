@@ -17,6 +17,10 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor, QPalette
 from datetime import datetime
 from pathlib import Path
+from PyQt6.QtWidgets import QWidget, QLabel, QPushButton, QHBoxLayout
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QLineEdit, QScrollArea, QVBoxLayout, QHBoxLayout, QFrame
+import pandas as pd
 
 
 class MainWindow(QMainWindow):
@@ -64,12 +68,30 @@ class MainWindow(QMainWindow):
                 background-color: #2d2d2d;
                 color: white;
             }
+            QDockWidget {
+                font-size: 18px;
+                background-color: #2d2d2d;
+                color: white;
+            }
+            QTextEdit {
+                font-size: 18px;
+                background-color: #2b2b2b;
+                color: white;
+            }
+            
         """
         )
 
     def initUI(self):
+        # ───── Top toolbar layout ───────────────────────────────
         top_toolbar = QWidget()
-        top_layout = QHBoxLayout()
+        outer_top_layout = QVBoxLayout()
+        outer_top_layout.setSpacing(5)
+        outer_top_layout.setContentsMargins(5, 5, 5, 5)
+
+        # ───── Top row: Controls (Dropdown, Add Panel, User Name, Session) ─────
+        controls_layout = QHBoxLayout()
+        controls_layout.setSpacing(10)
 
         self.panel_selector = QComboBox()
         self.panel_selector.addItems(self.available_modalities.keys())
@@ -90,16 +112,37 @@ class MainWindow(QMainWindow):
         self.status_indicator = QLabel()
         self.update_status_indicator()
 
-        top_layout.addWidget(self.panel_selector)
-        top_layout.addWidget(add_panel_btn)
-        top_layout.addWidget(self.user_field)
-        top_layout.addWidget(self.session_btn)
-        top_layout.addWidget(self.status_indicator)
-        top_layout.addStretch()
+        controls_layout.addWidget(self.panel_selector)
+        controls_layout.addWidget(add_panel_btn)
+        controls_layout.addWidget(self.user_field)
+        controls_layout.addWidget(self.session_btn)
+        controls_layout.addWidget(self.status_indicator)
+        controls_layout.addStretch()
 
-        top_toolbar.setLayout(top_layout)
+        # ───── Second row: Tags ─────
+        tags_row_layout = QHBoxLayout()
+        tags_row_layout.setSpacing(5)
+
+        self.tag_container = QHBoxLayout()  # holds tag widgets
+        self.tag_container.setSpacing(5)
+        self.tags = []
+
+        self.tag_input = QLineEdit()
+        self.tag_input.setPlaceholderText("Enter tags (press space or comma)")
+        self.tag_input.setStyleSheet("background-color: #2d2d2d; color: white; font-size: 16px;")
+        self.tag_input.returnPressed.connect(self.add_tag_from_input)
+        self.tag_input.textEdited.connect(self.handle_text_edited)
+
+        tags_row_layout.addLayout(self.tag_container)
+        tags_row_layout.addWidget(self.tag_input)
+
+        # Assemble top bar
+        outer_top_layout.addLayout(controls_layout)
+        outer_top_layout.addLayout(tags_row_layout)
+        top_toolbar.setLayout(outer_top_layout)
         self.setMenuWidget(top_toolbar)
 
+        # ───── Central widget where panels will dock ─────
         central_layout = QVBoxLayout()
         self.central_container = QWidget()
         self.central_container.setLayout(central_layout)
@@ -111,6 +154,13 @@ class MainWindow(QMainWindow):
         self.status_indicator.setStyleSheet(f"color: {color}; font-size: 18px;")
 
     def toggle_session(self):
+        if not self.session_running:
+            # Prevent starting if user name is empty
+            user_name = self.user_field.text().strip()
+            if not user_name:
+                self.statusBar().showMessage("Please enter a User Name before starting the session.", 5000)
+                return
+
         self.session_running = not self.session_running
         self.session_btn.setText("Stop Session" if self.session_running else "Start Session")
         self.update_status_indicator()
@@ -125,6 +175,8 @@ class MainWindow(QMainWindow):
             # Store this in case you want to access it later
             self.current_session_dir = session_dir
 
+            self.save_tags_metadata()
+
             for dock in self.dock_widgets.values():
                 widget = dock if isinstance(dock, QDockWidget) else dock
                 if hasattr(widget, "start_recording"):
@@ -135,6 +187,25 @@ class MainWindow(QMainWindow):
                 widget = dock if isinstance(dock, QDockWidget) else dock
                 if hasattr(widget, "stop_recording"):
                     widget.stop_recording()
+
+    def handle_text_edited(self, text):
+        if text.endswith(" ") or text.endswith(","):
+            self.add_tag_from_input()
+
+    def add_tag_from_input(self):
+        text = self.tag_input.text().strip(" ,")
+        if text and text not in self.tags:
+            self.tags.append(text)
+            tag_label = TagLabel(text, self.remove_tag)
+            self.tag_container.addWidget(tag_label)
+            self.save_tags_metadata()  # ← save on add
+        self.tag_input.clear()
+
+    def remove_tag(self, tag_widget):
+        tag_text = tag_widget.tag_text
+        if tag_text in self.tags:
+            self.tags.remove(tag_text)
+            self.save_tags_metadata()  # ← save on remove
 
     def load_modalities(self):
         import adalog.modalities  # Import the modalities package
@@ -158,6 +229,22 @@ class MainWindow(QMainWindow):
 
         return modalities
 
+    def save_tags_metadata(self):
+        if not self.session_running or not self.current_session_dir:
+            return
+
+        csv_path = os.path.join(self.current_session_dir, "tags.csv")
+        timestamp = datetime.utcnow().isoformat()
+
+        # Prepare a row: timestamp + comma-separated tags
+        row = [timestamp, ", ".join(self.tags)]
+
+        # Write header only if file doesn't exist
+        write_header = not os.path.exists(csv_path)
+
+        df = pd.DataFrame([row], columns=["timestamp", "tags"])
+        df.to_csv(csv_path, mode="a", header=write_header, index=False)
+
     def add_panel(self):
         panel_name = self.panel_selector.currentText()
         if panel_name in self.dock_widgets:
@@ -173,6 +260,80 @@ class MainWindow(QMainWindow):
             dock_widget.destroyed.connect(lambda: self.dock_widgets.pop(panel_name, None))
             self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, dock_widget)
             self.dock_widgets[panel_name] = panel_instance
+
+
+import hashlib
+
+import csv
+
+
+def pastel_color_from_text(text):
+    # Create a hash from the text
+    hash_bytes = hashlib.md5(text.encode()).digest()
+
+    # Use the first 3 bytes for RGB and map to pastel
+    def pastel(byte):
+        return 120 + (byte % 130)  # [180–239]
+
+    r, g, b = pastel(hash_bytes[0]), pastel(hash_bytes[1]), pastel(hash_bytes[2])
+
+    return f"background-color: rgb({r},{g},{b});"
+
+
+class TagLabel(QWidget):
+    def __init__(self, tag_text, on_remove):
+        super().__init__()
+        self.tag_text = tag_text
+        self.on_remove = on_remove
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(4, 2, 4, 2)  # overall tag container spacing
+        layout.setSpacing(4)
+
+        self.label = QLabel(tag_text)
+        self.label.setStyleSheet(
+            """
+            color: black;
+            font-weight: bold;
+            padding-left: 8px;
+            padding-right: 8px;
+            padding-top: 4px;
+            padding-bottom: 4px;
+        """
+        )
+
+        self.btn = QPushButton("×")
+        self.btn.setFixedSize(16, 16)
+        self.btn.setStyleSheet(
+            """
+            QPushButton {
+                border: none;
+                background-color: transparent;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                color: red;
+            }
+        """
+        )
+        self.btn.clicked.connect(self.remove_self)
+
+        layout.addWidget(self.label)
+        layout.addWidget(self.btn)
+
+        pastel_style = pastel_color_from_text(tag_text)
+        self.setStyleSheet(
+            f"""
+            QWidget {{
+                {pastel_style}
+                border-radius: 10px;
+            }}
+        """
+        )
+
+    def remove_self(self):
+        self.on_remove(self)
+        self.deleteLater()
 
 
 def main():
