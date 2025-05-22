@@ -73,6 +73,11 @@ class MainWindow(QMainWindow):
                 background-color: #2d2d2d;
                 color: white;
             }
+            QTabBar {
+                font-size: 18px;
+                background-color: #2d2d2d;
+                color: black;
+            }
             QTextEdit {
                 font-size: 18px;
                 background-color: #2b2b2b;
@@ -258,7 +263,7 @@ class MainWindow(QMainWindow):
             dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
             dock_widget.setFloating(False)
             dock_widget.destroyed.connect(lambda: self.dock_widgets.pop(panel_name, None))
-            self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, dock_widget)
+            self.addDockWidget(Qt.DockWidgetArea.TopDockWidgetArea, dock_widget)
             self.dock_widgets[panel_name] = panel_instance
 
 

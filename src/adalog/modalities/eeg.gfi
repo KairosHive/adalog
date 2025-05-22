@@ -23,6 +23,10 @@ links:
   node_out: oscin0
   slot_in: input_table
   slot_out: message
+- node_in: tableselectstring1
+  node_out: oscin0
+  slot_in: input_table
+  slot_out: message
 - node_in: filter0
   node_out: select0
   slot_in: data
@@ -51,14 +55,18 @@ links:
   node_out: tableselectstring0
   slot_in: fname
   slot_out: output_string
+- node_in: lslclient0
+  node_out: tableselectstring1
+  slot_in: source_name
+  slot_out: output_string
 nodes:
   eegheadsetdetection0:
     _type: EEGHeadsetDetection
     category: signal
     gui_kwargs:
       pos:
-      - 161
-      - -179
+      - 1387
+      - -119
       viewers:
         headset_status:
           collapsed: false
@@ -79,8 +87,8 @@ nodes:
     category: signal
     gui_kwargs:
       pos:
-      - -183
-      - -203
+      - 1043
+      - -143
       viewers:
         filtered_data:
           collapsed: false
@@ -121,8 +129,8 @@ nodes:
     category: inputs
     gui_kwargs:
       pos:
-      - -649
-      - -80
+      - 576
+      - -19
       viewers:
         out:
           collapsed: false
@@ -136,16 +144,16 @@ nodes:
         autotrigger: true
         max_frequency: 30.0
       lsl_stream:
-        refresh: false
-        source_name: Muse00:55:DA:B9:8A:4E
+        refresh: true
+        source_name: ''
         stream_name: ''
   oscin0:
     _type: OSCIn
     category: inputs
     gui_kwargs:
       pos:
-      - -252
-      - 413
+      - -191
+      - 152
       viewers:
         message:
           collapsed: false
@@ -168,8 +176,8 @@ nodes:
     category: outputs
     gui_kwargs:
       pos:
-      - 616
-      - -110
+      - 1842
+      - -50
       viewers: {}
     params:
       common:
@@ -186,8 +194,8 @@ nodes:
     category: array
     gui_kwargs:
       pos:
-      - -414
-      - -86
+      - 812
+      - -26
       viewers:
         out:
           collapsed: false
@@ -205,35 +213,13 @@ nodes:
         exclude: Right AUX
         expand_asterisk: false
         include: ''
-  sine0:
-    _type: Sine
-    category: inputs
-    gui_kwargs:
-      pos:
-      - -421
-      - 215
-      viewers:
-        out:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
-          viewer_idx: 0
-          width: 175
-    params:
-      common:
-        autotrigger: true
-        max_frequency: 30.0
-      sine:
-        frequency: 1.0
-        sampling_frequency: 1000.0
   table0:
     _type: Table
     category: inputs
     gui_kwargs:
       pos:
-      - 375
-      - -180
+      - 1601
+      - -120
       viewers:
         table:
           collapsed: false
@@ -253,8 +239,8 @@ nodes:
     category: inputs
     gui_kwargs:
       pos:
-      - 174
-      - 33
+      - 1400
+      - 93
       viewers:
         table:
           collapsed: false
@@ -274,8 +260,8 @@ nodes:
     category: misc
     gui_kwargs:
       pos:
-      - 186
-      - 419
+      - 246
+      - 158
       viewers:
         output_array:
           collapsed: false
@@ -295,8 +281,8 @@ nodes:
     category: misc
     gui_kwargs:
       pos:
-      - 184
-      - 608
+      - 244
+      - 347
       viewers:
         output_array:
           collapsed: false
@@ -316,8 +302,8 @@ nodes:
     category: misc
     gui_kwargs:
       pos:
-      - 187
-      - 813
+      - 247
+      - 552
       viewers:
         output_string:
           collapsed: false
@@ -332,13 +318,34 @@ nodes:
         max_frequency: 30.0
       selection:
         key: /recording_path
+  tableselectstring1:
+    _type: TableSelectString
+    category: misc
+    gui_kwargs:
+      pos:
+      - 245
+      - -33
+      viewers:
+        output_string:
+          collapsed: false
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+    params:
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+      selection:
+        key: /lsl_stream_selected
   writecsv0:
     _type: WriteCsv
     category: outputs
     gui_kwargs:
       pos:
-      - 510
-      - 449
+      - 1646
+      - 254
       viewers: {}
     params:
       Write:

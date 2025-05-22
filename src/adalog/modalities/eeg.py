@@ -23,13 +23,13 @@ class Eeg(BaseModality):
         self.osc_server.listen("127.0.0.1", 5008, default=True)
         self.osc_server.bind(b"/eeg_quality", self.update_eeg_quality)
 
-        # # Launch Goofi patch in a thread
-        # self.gfi_thread = Thread(
-        #     target=Manager,
-        #     kwargs=dict(filepath=Path(__file__).parent / "eeg.gfi", headless=True),
-        #     daemon=True,
-        # )
-        # self.gfi_thread.start()
+        # Launch Goofi patch in a thread
+        self.gfi_thread = Thread(
+            target=Manager,
+            kwargs=dict(filepath=Path(__file__).parent / "eeg.gfi", headless=True),
+            daemon=True,
+        )
+        self.gfi_thread.start()
 
         self.setup_ui()
 
@@ -43,16 +43,16 @@ class Eeg(BaseModality):
         row = QHBoxLayout()
         self.device_dropdown = QComboBox()
         self.device_dropdown.setFixedWidth(150)
-        self.device_dropdown.currentTextChanged.connect(self.send_selected_stream)  # <- added
+        self.device_dropdown.currentTextChanged.connect(self.send_selected_stream)
 
         row.addWidget(QLabel("Stream:"))
         row.addWidget(self.device_dropdown)
+        layout.addLayout(row)
 
         self.refresh_btn = QPushButton("🔄 Refresh Streams")
         self.refresh_btn.clicked.connect(self.refresh_streams)
-        row.addWidget(self.refresh_btn)
+        layout.addWidget(self.refresh_btn)
 
-        layout.addLayout(row)
         self.setLayout(layout)
 
         self.refresh_streams()
@@ -68,7 +68,7 @@ class Eeg(BaseModality):
             self.device_dropdown.addItem("No streams available")
         else:
             for stream in streams:
-                label = f"{stream.source_id()} ({stream.name()} @ {stream.hostname()})"
+                label = f"{stream.source_id()}"
                 self.device_dropdown.addItem(label)
 
     def start_recording(self, session_dir):
