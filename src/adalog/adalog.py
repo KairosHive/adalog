@@ -228,8 +228,8 @@ class MainWindow(QMainWindow):
 
         dock_widget.setWidget(panel_instance)
 
-        colour = pastel_color_hex(base_name)
-
+        # colour = pastel_color_hex(base_name)
+        colour = panel_colors.get(base_name, "#4488ff")  # Default to blue if not found
         dock_widget.setStyleSheet(
             f"""
             /* frame shown while the dock is floating ------------- */
@@ -339,6 +339,14 @@ def pastel_color_hex(text: str) -> str:
     pastel = lambda b: 120 + (b % 130)  # 120-249 → pastel range
     r, g, b = pastel(h[0]), pastel(h[1]), pastel(h[2])
     return f"#{r:02x}{g:02x}{b:02x}"  # "#cbe6d5"
+
+
+panel_colors = {
+    "Audio": "#45ffff",
+    "Text": "#8ad38a",
+    "Midi": "#ffd476",
+    "Eeg": "#ff00ae",
+}
 
 
 def set_theme(app: QApplication):
