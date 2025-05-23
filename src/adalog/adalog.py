@@ -13,6 +13,8 @@ from PyQt6.QtWidgets import (
     QLabel,
     QLineEdit,
 )
+import hashlib
+
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor, QPalette
 from datetime import datetime
@@ -35,57 +37,7 @@ class MainWindow(QMainWindow):
         self.session_running = False
         self.session_dir = None
 
-        self.apply_dark_mode()
         self.initUI()
-
-    def apply_dark_mode(self):
-        palette = QPalette()
-        palette.setColor(QPalette.ColorRole.Window, QColor(30, 30, 30))
-        palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
-        palette.setColor(QPalette.ColorRole.Base, QColor(45, 45, 45))
-        palette.setColor(QPalette.ColorRole.AlternateBase, QColor(60, 60, 60))
-        QApplication.setPalette(palette)
-
-        # Global font size style
-        self.setStyleSheet(
-            """
-            QLabel {
-                font-size: 18px;
-                color: white;
-            }
-            QLineEdit {
-                font-size: 18px;
-                background-color: #2d2d2d;
-                color: white;
-            }
-            QPushButton {
-                font-size: 18px;
-                background-color: #3d3d3d;
-                color: white;
-            }
-            QComboBox {
-                font-size: 18px;
-                background-color: #2d2d2d;
-                color: white;
-            }
-            QDockWidget {
-                font-size: 18px;
-                background-color: #2d2d2d;
-                color: white;
-            }
-            QTabBar {
-                font-size: 18px;
-                background-color: #2d2d2d;
-                color: black;
-            }
-            QTextEdit {
-                font-size: 18px;
-                background-color: #2b2b2b;
-                color: white;
-            }
-            
-        """
-        )
 
     def initUI(self):
         # ───── Top toolbar layout ───────────────────────────────
@@ -100,19 +52,15 @@ class MainWindow(QMainWindow):
 
         self.panel_selector = QComboBox()
         self.panel_selector.addItems(self.available_modalities.keys())
-        self.panel_selector.setStyleSheet("background-color: #2d2d2d; color: white;")
 
         add_panel_btn = QPushButton("Add Panel")
         add_panel_btn.clicked.connect(self.add_panel)
-        add_panel_btn.setStyleSheet("background-color: #3d3d3d; color: white;")
 
         self.user_field = QLineEdit()
         self.user_field.setPlaceholderText("User Name")
-        self.user_field.setStyleSheet("background-color: #2d2d2d; color: white;")
 
         self.session_btn = QPushButton("Start Session")
         self.session_btn.clicked.connect(self.toggle_session)
-        self.session_btn.setStyleSheet("background-color: #3d3d3d; color: white;")
 
         self.status_indicator = QLabel()
         self.update_status_indicator()
@@ -134,7 +82,6 @@ class MainWindow(QMainWindow):
 
         self.tag_input = QLineEdit()
         self.tag_input.setPlaceholderText("Enter tags (press space or comma)")
-        self.tag_input.setStyleSheet("background-color: #2d2d2d; color: white; font-size: 16px;")
         self.tag_input.returnPressed.connect(self.add_tag_from_input)
         self.tag_input.textEdited.connect(self.handle_text_edited)
 
@@ -267,11 +214,6 @@ class MainWindow(QMainWindow):
             self.dock_widgets[panel_name] = panel_instance
 
 
-import hashlib
-
-import csv
-
-
 def pastel_color_from_text(text):
     # Create a hash from the text
     hash_bytes = hashlib.md5(text.encode()).digest()
@@ -311,14 +253,7 @@ class TagLabel(QWidget):
         self.btn.setFixedSize(16, 16)
         self.btn.setStyleSheet(
             """
-            QPushButton {
-                border: none;
-                background-color: transparent;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                color: red;
-            }
+
         """
         )
         self.btn.clicked.connect(self.remove_self)
@@ -341,8 +276,56 @@ class TagLabel(QWidget):
         self.deleteLater()
 
 
+def set_theme(app: QApplication):
+    palette = QPalette()
+    palette.setColor(QPalette.ColorRole.Window, QColor(30, 30, 30))
+    palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+    palette.setColor(QPalette.ColorRole.Base, QColor(45, 45, 45))
+    palette.setColor(QPalette.ColorRole.AlternateBase, QColor(60, 60, 60))
+    app.setPalette(palette)
+
+    styles = """
+            QLabel {
+                font-size: 18px;
+                color: white;
+            }
+            QLineEdit {
+                font-size: 18px;
+                background-color: #2d2d2d;
+                color: white;
+            }
+            QPushButton {
+                font-size: 18px;
+                background-color: #3d3d3d;
+                color: white;
+            }
+            QComboBox {
+                font-size: 18px;
+                background-color: #2d2d2d;
+                color: white;
+            }
+            QDockWidget {
+                font-size: 18px;
+                background-color: #2d2d2d;
+                color: white;
+            }
+            QTabBar {
+                font-size: 18px;
+                background-color: #2d2d2d;
+                color: black;
+            }
+            QTextEdit {
+                font-size: 18px;
+                background-color: #2b2b2b;
+                color: white;
+            }
+        """
+    app.setStyleSheet(styles)
+
+
 def main():
     app = QApplication(sys.argv)
+    set_theme(app)
     window = MainWindow()
     window.show()
     sys.exit(app.exec())

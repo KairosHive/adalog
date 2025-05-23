@@ -41,7 +41,6 @@ class Text(BaseModality):
     def setup_ui(self):
         layout = QVBoxLayout()
         self.editor = SpaceTextEdit()
-        self.editor.setStyleSheet("QTextEdit { color: white; background-color: #2b2b2b; }")
         self.editor.firstCharOfWord.connect(self.on_new_word_started)
         self.editor.wordEnded.connect(self.on_word_ended)
         layout.addWidget(self.editor)
