@@ -4,6 +4,7 @@ from adalog.base_modality import BaseModality
 from datetime import datetime
 import os
 import pandas as pd
+import io
 
 
 class SpaceTextEdit(QTextEdit):
@@ -65,6 +66,13 @@ class Text(BaseModality):
             if len(words) > self.logged_word_index:
                 self._save_word(self.pending_word_start_ts, words[self.logged_word_index])
             self.pending_word_start_ts = None
+
+        full_text = self.editor.toPlainText()
+        if full_text and self.session_dir:
+            txt_path = os.path.join(self.session_dir, "text_final.txt")
+            # Use UTF-8 so accented characters survive.
+            with io.open(txt_path, "w", encoding="utf-8") as f:
+                f.write(full_text)
 
     def on_new_word_started(self):
         """Called at first character of a new word."""
