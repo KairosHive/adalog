@@ -227,6 +227,41 @@ class MainWindow(QMainWindow):
         panel_instance = panel_class()
 
         dock_widget.setWidget(panel_instance)
+
+        colour = pastel_color_hex(base_name)
+
+        dock_widget.setStyleSheet(
+            f"""
+            /* frame shown while the dock is floating ------------- */
+            QDockWidget {{                     /* title-bar etc.   */
+                background: #2d2d2d;
+            }}
+            QDockWidget::pane {{               /* floating frame   */
+                border: 2px solid {colour};
+                border-radius: 4px;
+                margin: 0px;
+            }}
+
+            /* widget area shown when the dock is *docked* -------- */
+            QDockWidget > QWidget {{           /* direct child     */
+                border: 2px solid {colour};
+                border-radius: 4px;
+                background: transparent;       /* keep your dark theme */
+            }}
+            QDockWidget::title {{
+                background:
+                {colour};
+                color: white;
+                font-size: 32px;
+                font-weight: bold;
+                padding-left: 6px;
+                height: 28px;
+            }}
+        """
+        )
+
+        self.addDockWidget(Qt.DockWidgetArea.TopDockWidgetArea, dock_widget)
+        self.dock_widgets.append(panel_instance)
         dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
         dock_widget.setFloating(False)
 
@@ -299,6 +334,13 @@ class TagLabel(QWidget):
         self.deleteLater()
 
 
+def pastel_color_hex(text: str) -> str:
+    h = hashlib.md5(text.encode()).digest()
+    pastel = lambda b: 120 + (b % 130)  # 120-249 → pastel range
+    r, g, b = pastel(h[0]), pastel(h[1]), pastel(h[2])
+    return f"#{r:02x}{g:02x}{b:02x}"  # "#cbe6d5"
+
+
 def set_theme(app: QApplication):
     palette = QPalette()
     palette.setColor(QPalette.ColorRole.Window, QColor(30, 30, 30))
@@ -328,20 +370,35 @@ def set_theme(app: QApplication):
                 color: white;
             }
             QDockWidget {
-                font-size: 18px;
+                font-size: 22px;
                 background-color: #2d2d2d;
-                color: white;
+                color: black;
             }
             QTabBar {
                 font-size: 18px;
                 background-color: #2d2d2d;
                 color: black;
             }
-            QTextEdit {
+            QTextEdit {                /* <-- opened here */
                 font-size: 18px;
                 background-color: #2b2b2b;
                 color: white;
+            }                          /* <-- need this */
+
+            /* Thin coloured outline around every dock-panel */
+            QDockWidget::pane {
+                border: 2px solid #4488ff;
+                border-radius: 4px;
+                margin: 0;
             }
+            
+            QDockWidget::title {
+                font-size: 24px;        /* make the text larger           */
+                padding-left: 6px;      /* breathing room before the text */
+                height: 28px;           /* forces the bar to grow a bit   */
+            }
+        
+        
         """
     app.setStyleSheet(styles)
 
