@@ -23,6 +23,7 @@ from PyQt6.QtWidgets import QWidget, QLabel, QPushButton, QHBoxLayout
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QLineEdit, QScrollArea, QVBoxLayout, QHBoxLayout, QFrame
 import pandas as pd
+from PyQt6.QtGui import QColor, QPalette, QPixmap
 
 
 class MainWindow(QMainWindow):
@@ -33,7 +34,7 @@ class MainWindow(QMainWindow):
 
         self.modalities_path = Path("modalities")
         self.available_modalities = self.load_modalities()
-        self.dock_widgets = {}
+        self.dock_widgets: list[object] = []
         self.session_running = False
         self.session_dir = None
 
@@ -46,7 +47,24 @@ class MainWindow(QMainWindow):
         outer_top_layout.setSpacing(5)
         outer_top_layout.setContentsMargins(5, 5, 5, 5)
 
-        # ───── Top row: Controls (Dropdown, Add Panel, User Name, Session) ─────
+        # ───── Row 0: centered logo ─────────────────────────────
+        # Row 0 : centred logo
+        logo = QLabel()
+
+        # Path is *relative to this file*, not to the shell’s cwd
+        logo_path = Path(__file__).resolve().parent / "assets" / "logo.png"
+        pix = QPixmap(str(logo_path))
+
+        if not pix.isNull():  # loaded OK
+            scaled = pix.scaledToHeight(200, Qt.TransformationMode.SmoothTransformation)
+            logo.setPixmap(scaled)
+        else:
+            logo.setText("logo.png not found")  # visual cue if path is wrong
+
+        logo.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        outer_top_layout.addWidget(logo, alignment=Qt.AlignmentFlag.AlignHCenter)
+
+        # ───── Row 1: Controls (Dropdown, Add Panel, …) ─────────
         controls_layout = QHBoxLayout()
         controls_layout.setSpacing(10)
 
@@ -72,11 +90,11 @@ class MainWindow(QMainWindow):
         controls_layout.addWidget(self.status_indicator)
         controls_layout.addStretch()
 
-        # ───── Second row: Tags ─────
+        # ───── Row 2: tags ──────────────────────────────────────
         tags_row_layout = QHBoxLayout()
         tags_row_layout.setSpacing(5)
 
-        self.tag_container = QHBoxLayout()  # holds tag widgets
+        self.tag_container = QHBoxLayout()
         self.tag_container.setSpacing(5)
         self.tags = []
 
@@ -88,13 +106,13 @@ class MainWindow(QMainWindow):
         tags_row_layout.addLayout(self.tag_container)
         tags_row_layout.addWidget(self.tag_input)
 
-        # Assemble top bar
+        # assemble the top bar
         outer_top_layout.addLayout(controls_layout)
         outer_top_layout.addLayout(tags_row_layout)
         top_toolbar.setLayout(outer_top_layout)
         self.setMenuWidget(top_toolbar)
 
-        # ───── Central widget where panels will dock ─────
+        # ───── central widget where panels will dock ────────────
         central_layout = QVBoxLayout()
         self.central_container = QWidget()
         self.central_container.setLayout(central_layout)
@@ -107,38 +125,36 @@ class MainWindow(QMainWindow):
 
     def toggle_session(self):
         if not self.session_running:
-            # Prevent starting if user name is empty
+            # block start if user name is empty
             user_name = self.user_field.text().strip()
             if not user_name:
                 self.statusBar().showMessage("Please enter a User Name before starting the session.", 5000)
                 return
 
+        # flip state ------------------------------------------------------------
         self.session_running = not self.session_running
         self.session_btn.setText("Stop Session" if self.session_running else "Start Session")
         self.update_status_indicator()
 
-        if self.session_running:
-            # Generate new unique session directory on start
+        # -----------------------------------------------------------------------
+        if self.session_running:  # ------------- START ---------------
             base_dir = os.path.join("sessions", self.user_field.text().strip())
             timestamp = datetime.utcnow().isoformat().replace(":", "-").replace(".", "-")
             session_dir = os.path.join(base_dir, timestamp)
             os.makedirs(session_dir, exist_ok=True)
 
-            # Store this in case you want to access it later
             self.current_session_dir = session_dir
-
             self.save_tags_metadata()
 
-            for dock in self.dock_widgets.values():
-                widget = dock if isinstance(dock, QDockWidget) else dock
-                if hasattr(widget, "start_recording"):
-                    widget.start_recording(session_dir)
+            # ←─  NEW LOOP: over every panel instance in the list
+            for panel in self.dock_widgets:
+                if hasattr(panel, "start_recording"):
+                    panel.start_recording(session_dir)
 
-        else:
-            for dock in self.dock_widgets.values():
-                widget = dock if isinstance(dock, QDockWidget) else dock
-                if hasattr(widget, "stop_recording"):
-                    widget.stop_recording()
+        else:  # ------------- STOP ----------------
+            for panel in self.dock_widgets:
+                if hasattr(panel, "stop_recording"):
+                    panel.stop_recording()
 
     def handle_text_edited(self, text):
         if text.endswith(" ") or text.endswith(","):
@@ -198,20 +214,27 @@ class MainWindow(QMainWindow):
         df.to_csv(csv_path, mode="a", header=write_header, index=False)
 
     def add_panel(self):
-        panel_name = self.panel_selector.currentText()
-        if panel_name in self.dock_widgets:
+        base_name = self.panel_selector.currentText()
+        panel_class = self.available_modalities.get(base_name)
+        if not panel_class:
             return
 
-        panel_class = self.available_modalities.get(panel_name)
-        if panel_class:
-            dock_widget = QDockWidget(panel_name, self)
-            panel_instance = panel_class()
-            dock_widget.setWidget(panel_instance)
-            dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
-            dock_widget.setFloating(False)
-            dock_widget.destroyed.connect(lambda: self.dock_widgets.pop(panel_name, None))
-            self.addDockWidget(Qt.DockWidgetArea.TopDockWidgetArea, dock_widget)
-            self.dock_widgets[panel_name] = panel_instance
+        # How many panels of this type already exist?
+        count = sum(1 for p in self.dock_widgets if type(p).__name__ == base_name)
+        title = base_name if count == 0 else f"{base_name} {count + 1}"
+
+        dock_widget = QDockWidget(title, self)
+        panel_instance = panel_class()
+
+        dock_widget.setWidget(panel_instance)
+        dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
+        dock_widget.setFloating(False)
+
+        # Remove panel from the list when the dock is closed
+        dock_widget.destroyed.connect(lambda _, pi=panel_instance: self.dock_widgets.remove(pi))
+
+        self.addDockWidget(Qt.DockWidgetArea.TopDockWidgetArea, dock_widget)
+        self.dock_widgets.append(panel_instance)
 
 
 def pastel_color_from_text(text):
