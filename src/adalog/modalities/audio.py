@@ -1,6 +1,4 @@
-from PyQt6.QtWidgets import (
-    QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QProgressBar
-)
+from PyQt6.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QProgressBar
 from PyQt6.QtCore import Qt, QTimer
 from adalog.base_modality import BaseModality
 
@@ -22,16 +20,16 @@ class Audio(BaseModality):
         super().__init__()
 
         # ---------------- runtime state --------------------------------------
-        self.session_dir   = None
-        self.recording     = False
-        self._queue        = queue.Queue()     # audio → writer thread
-        self._writer       = None
+        self.session_dir = None
+        self.recording = False
+        self._queue = queue.Queue()  # audio → writer thread
+        self._writer = None
         self._writer_thread = None
-        self._stream       = None
+        self._stream = None
 
         # most-recent RMS (0-1), guarded by a lock for thread safety
-        self._latest_rms   = 0.0
-        self._rms_lock     = threading.Lock()
+        self._latest_rms = 0.0
+        self._rms_lock = threading.Lock()
 
         # ---------------- GUI -------------------------------------------------
         self._build_ui()
@@ -41,7 +39,7 @@ class Audio(BaseModality):
 
         # timer to refresh the progress-bar
         self._meter_timer = QTimer(self)
-        self._meter_timer.setInterval(33)      # ~30 Hz
+        self._meter_timer.setInterval(33)  # ~30 Hz
         self._meter_timer.timeout.connect(self._update_level_bar)
         self._meter_timer.start()
 
@@ -52,6 +50,7 @@ class Audio(BaseModality):
         row = QHBoxLayout()
         row.addWidget(QLabel("Input device:"))
         self.device_box = QComboBox()
+        self.device_box.setMaximumWidth(300)
         for idx, dev in enumerate(sd.query_devices()):
             if dev["max_input_channels"] > 0:
                 self.device_box.addItem(f"{idx}: {dev['name']}", userData=idx)
@@ -62,7 +61,8 @@ class Audio(BaseModality):
 
         self._level_bar = QProgressBar()
         self._level_bar.setRange(0, 100)
-        self._level_bar.setFixedHeight(14)
+        self._level_bar.setMaximumHeight(40)
+        self._level_bar.setMaximumWidth(400)
         self._level_bar.setTextVisible(False)
         layout.addWidget(self._level_bar)
 
@@ -102,24 +102,19 @@ class Audio(BaseModality):
         with self._queue.mutex:
             self._queue.queue.clear()
 
-        self._writer = sf.SoundFile(
-            wav_path, mode="w",
-            samplerate=48_000, channels=1, subtype="PCM_16"
-        )
-        self._writer_thread = Thread(
-            target=self._drain_queue_to_file, daemon=True
-        )
+        self._writer = sf.SoundFile(wav_path, mode="w", samplerate=48_000, channels=1, subtype="PCM_16")
+        self._writer_thread = Thread(target=self._drain_queue_to_file, daemon=True)
         self._writer_thread.start()
 
         self.session_dir = session_dir
-        self.recording   = True
+        self.recording = True
 
     def stop_recording(self):
         if not self.recording:
             return
         self.recording = False
 
-        self._queue.put(None)            # sentinel to end writer thread
+        self._queue.put(None)  # sentinel to end writer thread
         self._writer_thread.join()
         self._writer.close()
         self._writer = None
@@ -127,7 +122,7 @@ class Audio(BaseModality):
     # ───────────────────────── audio callbacks ──────────────────────────────
     def _audio_callback(self, indata, frames, time_info, status):
         # store RMS for the meter
-        rms = np.sqrt(np.mean(indata ** 2))
+        rms = np.sqrt(np.mean(indata**2))
         with self._rms_lock:
             self._latest_rms = rms
 
@@ -138,7 +133,7 @@ class Audio(BaseModality):
     def _drain_queue_to_file(self):
         while True:
             chunk = self._queue.get()
-            if chunk is None:            # sentinel
+            if chunk is None:  # sentinel
                 break
             self._writer.write(chunk)
 
