@@ -401,7 +401,16 @@ def set_theme(app: QApplication):
                 font-size: 18px;
                 background-color: #2d2d2d;
                 color: white;
+                border: 1px solid #444444;
             }
+
+            QComboBox QAbstractItemView {
+                background-color: #2d2d2d;    /* same dark background */
+                color: white;                 /* make dropdown text visible */
+                selection-background-color: #555555;
+                selection-color: white;
+            }
+
             QDockWidget {
                 font-size: 22px;
                 background-color: #2d2d2d;
