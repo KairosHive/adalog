@@ -97,8 +97,8 @@ class GaugeWidget(QWidget):
         # Value (a bit lower than center)
         p.setPen(Qt.GlobalColor.white)
         p.setFont(QFont("Segoe UI", int(radius * 0.23)))
-        value_rect = self.rect().adjusted(0, int(radius * 1.4), 0, 0)  # shift downward
-        p.drawText(value_rect, Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop, f"{self._val:.0f}")
+        value_rect = self.rect().adjusted(0, int(radius * 1.9), 0, 0)  # shift downward
+        p.drawText(value_rect, Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop, f"{self._val:.2f}")
 
         # Larger unit (under value)
         unit_font = QFont("Segoe UI", int(radius * 0.18))
