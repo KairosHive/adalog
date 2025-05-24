@@ -24,6 +24,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QLineEdit, QScrollArea, QVBoxLayout, QHBoxLayout, QFrame
 import pandas as pd
 from PyQt6.QtGui import QColor, QPalette, QPixmap
+from PyQt6.QtCore import QTimer, QTime
 
 
 class MainWindow(QMainWindow):
@@ -37,7 +38,11 @@ class MainWindow(QMainWindow):
         self.dock_widgets: list[object] = []
         self.session_running = False
         self.session_dir = None
-
+        self.chrono_label = QLabel("00:00")
+        self.chrono_label.setStyleSheet("color: white; font-size: 18px;")
+        self.chrono_timer = QTimer()
+        self.chrono_timer.timeout.connect(self.update_chrono)
+        self.session_start_time = None
         self.initUI()
 
     def initUI(self):
@@ -48,18 +53,15 @@ class MainWindow(QMainWindow):
         outer_top_layout.setContentsMargins(5, 5, 5, 5)
 
         # ───── Row 0: centered logo ─────────────────────────────
-        # Row 0 : centred logo
         logo = QLabel()
-
-        # Path is *relative to this file*, not to the shell’s cwd
         logo_path = Path(__file__).resolve().parent / "assets" / "logo.png"
         pix = QPixmap(str(logo_path))
 
-        if not pix.isNull():  # loaded OK
+        if not pix.isNull():
             scaled = pix.scaledToHeight(200, Qt.TransformationMode.SmoothTransformation)
             logo.setPixmap(scaled)
         else:
-            logo.setText("logo.png not found")  # visual cue if path is wrong
+            logo.setText("logo.png not found")
 
         logo.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         outer_top_layout.addWidget(logo, alignment=Qt.AlignmentFlag.AlignHCenter)
@@ -83,11 +85,23 @@ class MainWindow(QMainWindow):
         self.status_indicator = QLabel()
         self.update_status_indicator()
 
+        # Add widgets on the left
         controls_layout.addWidget(self.panel_selector)
         controls_layout.addWidget(add_panel_btn)
         controls_layout.addWidget(self.user_field)
         controls_layout.addWidget(self.session_btn)
-        controls_layout.addWidget(self.status_indicator)
+
+        # Group chrono + light together
+        chrono_group = QHBoxLayout()
+        chrono_group.setSpacing(5)
+        chrono_group.addWidget(self.chrono_label)
+        chrono_group.addWidget(self.status_indicator)
+
+        chrono_widget = QWidget()
+        chrono_widget.setLayout(chrono_group)
+
+        controls_layout.addWidget(chrono_widget)
+
         controls_layout.addStretch()
 
         # ───── Row 2: tags ──────────────────────────────────────
@@ -106,7 +120,7 @@ class MainWindow(QMainWindow):
         tags_row_layout.addLayout(self.tag_container)
         tags_row_layout.addWidget(self.tag_input)
 
-        # assemble the top bar
+        # Assemble the top bar
         outer_top_layout.addLayout(controls_layout)
         outer_top_layout.addLayout(tags_row_layout)
         top_toolbar.setLayout(outer_top_layout)
@@ -146,12 +160,17 @@ class MainWindow(QMainWindow):
             self.current_session_dir = session_dir
             self.save_tags_metadata()
 
+            self.session_start_time = datetime.utcnow()
+            self.chrono_timer.start(1000)  # update every second
+            self.chrono_label.setText("00:00")  # reset display
+
             # ←─  NEW LOOP: over every panel instance in the list
             for panel in self.dock_widgets:
                 if hasattr(panel, "start_recording"):
                     panel.start_recording(session_dir)
 
         else:  # ------------- STOP ----------------
+            self.chrono_timer.stop()
             for panel in self.dock_widgets:
                 if hasattr(panel, "stop_recording"):
                     panel.stop_recording()
@@ -159,6 +178,12 @@ class MainWindow(QMainWindow):
     def handle_text_edited(self, text):
         if text.endswith(" ") or text.endswith(","):
             self.add_tag_from_input()
+
+    def update_chrono(self):
+        if self.session_start_time:
+            elapsed = datetime.utcnow() - self.session_start_time
+            minutes, seconds = divmod(int(elapsed.total_seconds()), 60)
+            self.chrono_label.setText(f"{minutes:02d}:{seconds:02d}")
 
     def add_tag_from_input(self):
         text = self.tag_input.text().strip(" ,")
