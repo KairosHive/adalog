@@ -367,10 +367,11 @@ def pastel_color_hex(text: str) -> str:
 
 
 panel_colors = {
-    "Audio": "#45ffff",
+    "Audio": "#5579d4",
     "Text": "#8ad38a",
-    "Midi": "#ffd476",
-    "Eeg": "#ff00ae",
+    "Midi": "#deb865",
+    "Eeg": "#b157d1",
+    "Meteo": "#d45d5d",  #  ← NEW
 }
 
 
