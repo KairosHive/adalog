@@ -96,12 +96,12 @@ class GaugeWidget(QWidget):
 
         # Value (a bit lower than center)
         p.setPen(Qt.GlobalColor.white)
-        p.setFont(QFont("Segoe UI", int(radius * 0.23)))
+        p.setFont(QFont("Segoe UI", int(radius * 0.30)))
         value_rect = self.rect().adjusted(0, int(radius * 1.9), 0, 0)  # shift downward
         p.drawText(value_rect, Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop, f"{self._val:.2f}")
 
         # Larger unit (under value)
-        unit_font = QFont("Segoe UI", int(radius * 0.18))
+        unit_font = QFont("Segoe UI", int(radius * 0.25))
         p.setFont(unit_font)
         unit_rect = self.rect().adjusted(0, int(radius * 0.45), 0, 0)  # even further down
         p.drawText(unit_rect, Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop, self._unit)
@@ -126,11 +126,11 @@ _COL_RENAME_PLASMA = {
 }
 
 # Gauge ranges (edit if you like)
-R_BZ = RangeDef(-20, 20, 5, 0)  # green ≤5, orange 0..-5, red <-10
-R_BT = RangeDef(0, 30, 15, 20)
-R_SPD = RangeDef(200, 1000, 600, 800)
-R_DEN = RangeDef(0, 30, 10, 15)
-R_TEMP = RangeDef(0, 1_000_000, 3e5, 5e5)
+R_BZ = RangeDef(-5, 5, 0, 2)  # green ≤5, orange 0..-5, red <-10
+R_BT = RangeDef(0, 20, 10, 15)
+R_SPD = RangeDef(300, 600, 450, 500)
+R_DEN = RangeDef(0, 10, 5, 8)
+R_TEMP = RangeDef(0, 500_000, 2e5, 2.5e5)
 
 
 # ════════════════════════════════════════════════════════════════════
