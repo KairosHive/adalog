@@ -1,35 +1,34 @@
-import sys
-import os
-import importlib.util
-from PyQt6.QtWidgets import (
-    QApplication,
-    QMainWindow,
-    QDockWidget,
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QPushButton,
-    QComboBox,
-    QLabel,
-    QLineEdit,
-)
 import hashlib
-
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QColor, QPalette
+import importlib.util
+import os
+import sys
 from datetime import datetime
 from pathlib import Path
-from PyQt6.QtWidgets import QWidget, QLabel, QPushButton, QHBoxLayout
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QLineEdit, QScrollArea, QVBoxLayout, QHBoxLayout, QFrame
+
 import pandas as pd
+from PyQt6.QtCore import Qt, QTime, QTimer
 from PyQt6.QtGui import QColor, QPalette, QPixmap
-from PyQt6.QtCore import QTimer, QTime
+from PyQt6.QtWidgets import (
+    QApplication,
+    QComboBox,
+    QDockWidget,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMainWindow,
+    QPushButton,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, session_dir: str = "sessions"):
         super().__init__()
+        self.session_dir = session_dir
+
         self.setWindowTitle("Adalog Main Interface")
         self.setGeometry(100, 100, 800, 600)
 
@@ -37,7 +36,6 @@ class MainWindow(QMainWindow):
         self.available_modalities = self.load_modalities()
         self.dock_widgets: list[object] = []
         self.session_running = False
-        self.session_dir = None
         self.chrono_label = QLabel("00:00")
         self.chrono_label.setStyleSheet("color: white; font-size: 18px;")
         self.chrono_timer = QTimer()
@@ -152,7 +150,7 @@ class MainWindow(QMainWindow):
 
         # -----------------------------------------------------------------------
         if self.session_running:  # ------------- START ---------------
-            base_dir = os.path.join("sessions", self.user_field.text().strip())
+            base_dir = os.path.join(self.session_dir, self.user_field.text().strip())
             timestamp = datetime.utcnow().isoformat().replace(":", "-").replace(".", "-")
             session_dir = os.path.join(base_dir, timestamp)
             os.makedirs(session_dir, exist_ok=True)
@@ -448,9 +446,15 @@ def set_theme(app: QApplication):
 
 
 def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(description="adalog recording interface")
+    parser.add_argument("--session-dir", type=str, default="sessions", help="Directory to save session data")
+    args = parser.parse_args()
+
     app = QApplication(sys.argv)
     set_theme(app)
-    window = MainWindow()
+    window = MainWindow(args.session_dir)
     window.show()
     sys.exit(app.exec())
 
