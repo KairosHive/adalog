@@ -371,7 +371,8 @@ panel_colors = {
     "Text": "#8ad38a",
     "Midi": "#deb865",
     "Eeg": "#b157d1",
-    "Meteo": "#d45d5d",  #  ← NEW
+    "Meteo": "#d45d5d",
+    "Drawing": "#7a6ed2",
 }
 
 
