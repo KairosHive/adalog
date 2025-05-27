@@ -23,7 +23,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-
 class MainWindow(QMainWindow):
     def __init__(self, session_dir: str = "sessions"):
         super().__init__()
@@ -32,7 +31,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Adalog Main Interface")
         self.setGeometry(100, 100, 800, 600)
 
-        self.modalities_path = Path("modalities")
+        self.modalities_path = Path("modalities/rec")
         self.available_modalities = self.load_modalities()
         self.dock_widgets: list[object] = []
         self.session_running = False
@@ -165,7 +164,11 @@ class MainWindow(QMainWindow):
             # ←─  NEW LOOP: over every panel instance in the list
             for panel in self.dock_widgets:
                 if hasattr(panel, "start_recording"):
-                    panel.start_recording(session_dir)
+                    panel_name = type(panel).__name__          # e.g. "Eeg"
+                    panel_dir = os.path.join(session_dir, panel_name)
+                    os.makedirs(panel_dir, exist_ok=True)
+                    panel.start_recording(panel_dir)
+
 
         else:  # ------------- STOP ----------------
             self.chrono_timer.stop()
@@ -199,16 +202,16 @@ class MainWindow(QMainWindow):
             self.save_tags_metadata()  # ← save on remove
 
     def load_modalities(self):
-        import adalog.modalities  # Import the modalities package
+        import adalog.modalities.rec  # Import the modalities package
 
-        modalities_dir = Path(adalog.modalities.__file__).parent
+        modalities_dir = Path(adalog.modalities.rec.__file__).parent
         modalities = {}
 
         for file in modalities_dir.glob("*.py"):
             if file.stem == "__init__":
                 continue
 
-            module_name = f"adalog.modalities.{file.stem}"
+            module_name = f"adalog.modalities.rec.{file.stem}"
             try:
                 module = importlib.import_module(module_name)
                 class_name = "".join([part.capitalize() for part in file.stem.split("_")])
@@ -244,7 +247,7 @@ class MainWindow(QMainWindow):
 
         # How many panels of this type already exist?
         count = sum(1 for p in self.dock_widgets if type(p).__name__ == base_name)
-        title = base_name if count == 0 else f"{base_name} {count + 1}"
+        title = base_name if count == 0 else f"{base_name}{count + 1}"
 
         dock_widget = QDockWidget(title, self)
         panel_instance = panel_class()

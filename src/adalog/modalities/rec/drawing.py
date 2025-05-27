@@ -147,7 +147,7 @@ class Drawing(BaseModality):
         self.recording = True
         self.canvas.clear()
 
-        drawings_dir = Path(session_dir) / "drawings"
+        drawings_dir = Path(session_dir)
         drawings_dir.mkdir(exist_ok=True)
 
         csv_path = drawings_dir / "drawings.csv"
@@ -162,7 +162,7 @@ class Drawing(BaseModality):
         if not (self.recording and self.session_dir):
             return
 
-        drawings_dir = Path(self.session_dir) / "drawings"
+        drawings_dir = Path(self.session_dir)
         drawings_dir.mkdir(exist_ok=True)
 
         ts = datetime.utcnow().isoformat().replace(":", "-").replace(".", "-")

@@ -9,7 +9,8 @@ dependencies = {file = ["requirements.txt"]}
 line-length = 128
 
 [project.scripts]
-adalog-rec = "adalog.adalog:main"
+adalog-rec = "adalog.adalog_rec:main"
+adalog-off = "adalog.adalog_off:main"
 
 [project]
 classifiers = [
