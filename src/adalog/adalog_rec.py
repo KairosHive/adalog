@@ -452,7 +452,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="adalog recording interface")
-    parser.add_argument("--session-dir", type=str, default="sessions", help="Directory to save session data")
+    parser.add_argument("--session-dir", type=str, default="../../sessions", help="Directory to save session data")
     args = parser.parse_args()
 
     app = QApplication(sys.argv)

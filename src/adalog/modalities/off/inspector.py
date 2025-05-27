@@ -17,7 +17,7 @@ from PyQt6.QtWidgets import (
     QWidget,    
 )
 from PyQt6.QtGui import QAction
-
+import sys
 # ➊  OFF-runtime base class (tiny)
 # ────────────────────────────────────────────────────────────
 from adalog.base_modality import BaseModalityOff
@@ -30,8 +30,8 @@ import numpy as np
 # ➋  Small helpers
 # ────────────────────────────────────────────────────────────
 SF_EEG = 256
-PANEL_COLORS = {"Text": "#8ad38a", "Eeg": "#b157d1", "Drawing": "#7a6ed2"}
-MOD_LIST = ["Text", "Eeg", "Drawing"]
+PANEL_COLORS = {"Text": "#8ad38a", "Eeg": "#b157d1", "Drawing": "#7a6ed2", "Meteo": "#d45d5d", "Audio": "#5579d4"}
+MOD_LIST = ["Text", "Eeg", "Drawing", 'Meteo', 'Audio']
 
 
 def human_duration(seconds: float) -> str:
@@ -97,11 +97,11 @@ class CheckableCombo(QLineEdit):
         self.changed.emit()
 
 class OverlapMatrixCanvas(FigureCanvas):
-    def __init__(self, sel, overlaps):
-        fig, ax = plt.subplots(figsize=(3, 3), dpi=100, facecolor='none')
+    def __init__(self, sel, overlaps, mod_durations):
+        fig, ax = plt.subplots(figsize=(3, 3), dpi=200, facecolor='none')
         super().__init__(fig)
 
-        self.setFixedWidth(280)  # 👈 Prevents canvas from stretching too wide
+        #self.setFixedWidth(280)  # 👈 Prevents canvas from stretching too wide
         self.setStyleSheet("background: transparent; border: 0px; margin: 0px; padding: 0px;")
         self.setContentsMargins(0, 0, 0, 0)
 
@@ -113,8 +113,11 @@ class OverlapMatrixCanvas(FigureCanvas):
                     dur = overlaps.get((a, b), overlaps.get((b, a), 0.0))
                     matrix[i, j] = dur
 
+        # add diagonal with modality durations
+        # for i, m in enumerate(sel):
+        #     matrix[i, i] = mod_durations.get(m, 0.0)
         # Display matrix as heatmap
-        cax = ax.matshow(matrix, cmap='Purples', alpha=0.8)
+        cax = ax.matshow(matrix, cmap='viridis', alpha=0.8)
         cbar = fig.colorbar(cax, ax=ax, shrink=0.7)
 
         # Make colorbar text white
@@ -123,15 +126,15 @@ class OverlapMatrixCanvas(FigureCanvas):
 
         ax.set_xticks(range(n))
         ax.set_yticks(range(n))
-        ax.set_xticklabels(sel, rotation=45, ha='left', fontsize=12, color='white')
-        ax.set_yticklabels(sel, fontsize=12, color='white')
+        ax.set_xticklabels(sel, rotation=90, ha='left', fontsize=9, color='white')
+        ax.set_yticklabels(sel, fontsize=9, color='white')
         ax.xaxis.set_ticks_position('bottom')
         ax.tick_params(colors='white')
-        ax.set_title("Overlap Matrix", pad=10, fontsize=14, color='white')
+        ax.set_title("Bimodal Data Length", pad=10, fontsize=10, color='white')
 
         for (i, j), val in np.ndenumerate(matrix):
             if i > j and val > 0:
-                ax.text(j, i, human_duration(val), ha='center', va='center', fontsize=10, color='white')
+                ax.text(j, i, human_duration(val), ha='center', va='center', fontsize=9, color='white')
 
         ax.set_aspect('equal')
         ax.grid(False)
@@ -293,7 +296,34 @@ class StatsPanel(QWidget):
                     data["Drawing"]["pngs"] += len(pngs)
                     data["Drawing"]["dur"] += dur
                     present_dur["Drawing"] = dur
-
+            # METEO -----------------------------------------------
+            if not self.mods or "Meteo" in self.mods:
+                meteo_dir = sess / "Meteo"
+                csv = meteo_dir / "meteo.csv"
+                dur = span(csv, fmt="%Y-%m-%dT%H:%M:%S")
+                if dur > 0:
+                    present.add("Meteo")
+                    data["Meteo"]["sessions"] += 1
+                    data["Meteo"]["dur"] += dur
+                    present_dur["Meteo"] = dur
+            # AUDIO -----------------------------------------------
+            if not self.mods or "Audio" in self.mods:
+                audio_dir = sess / "Audio"
+                wav_files = list(audio_dir.glob("*.wav"))
+                # load first wav file to get duration
+                dur = 0.0
+                if wav_files:
+                    try:
+                        import soundfile as sf
+                        with sf.SoundFile(wav_files[0]) as f:
+                            dur = len(f) / f.samplerate
+                    except Exception:
+                        pass
+                if dur > 0:
+                    present.add("Audio")
+                    data["Audio"]["sessions"] += 1
+                    data["Audio"]["dur"] += dur
+                    present_dur["Audio"] = dur
             # overlaps ---------------------------------------------
             for a in present:
                 for b in present:
@@ -344,6 +374,10 @@ class StatsPanel(QWidget):
             elif mod == "Drawing":
                 add("PNGs:", str(info["pngs"])); row += 1
                 add("Total time:", human_duration(info["dur"])); row += 1
+            elif mod == "Meteo":
+                add("Total time:", human_duration(info["dur"])); row += 1
+            elif mod == "Audio":
+                add("Total time:", human_duration(info["dur"])); row += 1
             row += 1  # blank line
 
         # ────── Overlap matrix (right column) ──────
@@ -359,9 +393,8 @@ class StatsPanel(QWidget):
             w = self.mat_grid.takeAt(0).widget()
             if w:
                 w.setParent(None)
-
-        # Add matplotlib matrix widget
-        canvas = OverlapMatrixCanvas(sel, overlaps)
+        mod_durations = {m: st[m]["dur"] for m in sel}
+        canvas = OverlapMatrixCanvas(sel, overlaps, mod_durations)
         self.mat_grid.addWidget(canvas, 0, 0)
 
 

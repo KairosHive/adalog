@@ -125,7 +125,7 @@ def main() -> None:
     import argparse
 
     p = argparse.ArgumentParser()
-    p.add_argument("--sessions-dir", default="../../sessions", help="Root folder with user sessions")
+    p.add_argument("--sessions-dir", default="./sessions", help="Root folder with user sessions")
     args = p.parse_args()
 
     root = Path(args.sessions_dir).expanduser()
