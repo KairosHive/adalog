@@ -21,7 +21,10 @@ from PyQt6.QtWidgets import (
     QScrollArea,
     QVBoxLayout,
     QWidget,
+    QCompleter,
 )
+from PyQt6.QtCore import QStringListModel
+
 
 class MainWindow(QMainWindow):
     def __init__(self, session_dir: str = "sessions"):
@@ -109,10 +112,21 @@ class MainWindow(QMainWindow):
         self.tag_container.setSpacing(5)
         self.tags = []
 
-        self.tag_input = QLineEdit()
-        self.tag_input.setPlaceholderText("Enter tags (press space or comma)")
-        self.tag_input.returnPressed.connect(self.add_tag_from_input)
-        self.tag_input.textEdited.connect(self.handle_text_edited)
+        self.tag_input = QComboBox()
+        self.tag_input.setEditable(True)
+        self.tag_input.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)  # prevent duplicate items
+        self.tag_input.setPlaceholderText("Enter tags (press space, comma, or pick from list)")
+
+        line_edit = self.tag_input.lineEdit()
+        line_edit.returnPressed.connect(self.add_tag_from_input)
+        line_edit.textEdited.connect(self.handle_text_edited)
+
+
+        self.completer = QCompleter()
+        self.completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        self.tag_input.setCompleter(self.completer)
+        self.user_field.editingFinished.connect(self.update_tag_completer)
+
 
         tags_row_layout.addLayout(self.tag_container)
         tags_row_layout.addWidget(self.tag_input)
@@ -133,6 +147,43 @@ class MainWindow(QMainWindow):
         color = "#00ff00" if self.session_running else "#ff4444"
         self.status_indicator.setText("●")
         self.status_indicator.setStyleSheet(f"color: {color}; font-size: 18px;")
+
+    def get_all_tags_for_user(self, user):
+        tag_set = set()
+        user_dir = os.path.join(self.session_dir, user)
+        if not os.path.isdir(user_dir):
+            return []
+        for session_name in os.listdir(user_dir):
+            tag_path = os.path.join(user_dir, session_name, "tags.csv")
+            if os.path.isfile(tag_path):
+                try:
+                    df = pd.read_csv(tag_path)
+                    if not df.empty and "tags" in df.columns:
+                        for tag_str in df["tags"]:
+                            if not isinstance(tag_str, str):
+                                continue
+                            for tag in tag_str.split(","):
+                                t = tag.strip()
+                                if t:
+                                    tag_set.add(t)
+                except Exception as e:
+                    print(f"Could not read {tag_path}: {e}")
+        return sorted(tag_set)
+
+    def update_tag_completer(self):
+        user = self.user_field.text().strip()
+        if not user:
+            self.tag_input.clear()
+            return
+        tag_list = self.get_all_tags_for_user(user)
+        self.tag_input.clear()
+        self.tag_input.addItems(tag_list)
+        self.tag_input.setCurrentText("")
+        # Still use QCompleter for typing!
+        completer = QCompleter(tag_list)
+        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        self.tag_input.setCompleter(completer)
+
 
     def toggle_session(self):
         if not self.session_running:
@@ -187,13 +238,15 @@ class MainWindow(QMainWindow):
             self.chrono_label.setText(f"{minutes:02d}:{seconds:02d}")
 
     def add_tag_from_input(self):
-        text = self.tag_input.text().strip(" ,")
+        text = self.tag_input.currentText().strip(" ,")
         if text and text not in self.tags:
             self.tags.append(text)
             tag_label = TagLabel(text, self.remove_tag)
             self.tag_container.addWidget(tag_label)
-            self.save_tags_metadata()  # ← save on add
-        self.tag_input.clear()
+            self.save_tags_metadata()
+            self.update_tag_completer()
+        self.tag_input.setCurrentText("")
+
 
     def remove_tag(self, tag_widget):
         tag_text = tag_widget.tag_text
@@ -452,7 +505,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="adalog recording interface")
-    parser.add_argument("--session-dir", type=str, default="../../sessions", help="Directory to save session data")
+    parser.add_argument("--session-dir", type=str, default="sessions", help="Directory to save session data")
     args = parser.parse_args()
 
     app = QApplication(sys.argv)
