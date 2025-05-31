@@ -9,8 +9,8 @@ dependencies = {file = ["requirements.txt"]}
 line-length = 128
 
 [project.scripts]
-adalog-rec = "adalog.adalog_rec:main"
 adalog-off = "adalog.adalog_off:main"
+adalog-rec = "adalog.adalog_rec:main"
 
 [project]
 classifiers = [
@@ -22,7 +22,7 @@ classifiers = [
 ]
 description = "Neurophenomenological self-logging interface"
 dynamic = ["dependencies"]
-keywords = ["signal-processing", "neurofeedback", "biofeedback", "real-time", "EEG", "ECG"]
+keywords = ["self-logging", "neurophenomenology", "eeg", "multimodal"]
 name = "adalog"
 readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.9"
