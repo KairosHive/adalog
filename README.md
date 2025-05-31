@@ -101,4 +101,4 @@ TODO
 
 ## ❤️ Acknowledgments
 
-Thanks to the goofi-pipe team for providing the underlying data processing framework.
+Thanks to the [goofi-pipe](https://github.com/dav0dea/goofi-pipe) team for providing the underlying data processing framework.
