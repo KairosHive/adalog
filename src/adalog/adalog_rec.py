@@ -8,6 +8,7 @@ from pathlib import Path
 import pandas as pd
 from PyQt6.QtCore import Qt, QTime, QTimer
 from PyQt6.QtGui import QColor, QPalette, QPixmap
+from PyQt6.QtWidgets import QSizePolicy 
 from PyQt6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -104,32 +105,58 @@ class MainWindow(QMainWindow):
 
         controls_layout.addStretch()
 
-        # ───── Row 2: tags ──────────────────────────────────────
+        # --- Row 2: tags ------------------------------------------------------
         tags_row_layout = QHBoxLayout()
         tags_row_layout.setSpacing(5)
 
-        self.tag_container = QHBoxLayout()
+        # A QWidget that actually holds the TagLabel widgets
+        self.tags_widget   = QWidget()
+        self.tag_container = QHBoxLayout(self.tags_widget)
         self.tag_container.setSpacing(5)
-        self.tags = []
+        self.tag_container.setContentsMargins(0, 0, 0, 0)
+        self.tags = []  
 
+        # Scroll area wrapping that widget
+        self.tag_scroll = QScrollArea()
+        self.tag_scroll.setWidgetResizable(True)
+        self.tag_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.tag_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.tag_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        self.tag_scroll.setWidget(self.tags_widget)
+        self.tag_scroll.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+
+        self.tag_scroll.setStyleSheet("""
+            QScrollArea { border: none; padding: 0px; }
+            QScrollBar:horizontal {
+            height: 6px;
+            margin: 0px;
+            background: transparent;
+            }
+        """)
+
+        # Tags label
+        tags_label = QLabel("Tags:")
+
+        # Editable combo-box for new tags
         self.tag_input = QComboBox()
         self.tag_input.setEditable(True)
-        self.tag_input.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)  # prevent duplicate items
+        self.tag_input.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
         self.tag_input.setPlaceholderText("Enter tags (press space, comma, or pick from list)")
+        self.tag_input.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.tag_input.setMaximumWidth(200)
 
         line_edit = self.tag_input.lineEdit()
         line_edit.returnPressed.connect(self.add_tag_from_input)
         line_edit.textEdited.connect(self.handle_text_edited)
-
 
         self.completer = QCompleter()
         self.completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         self.tag_input.setCompleter(self.completer)
         self.user_field.editingFinished.connect(self.update_tag_completer)
 
-
-        tags_row_layout.addLayout(self.tag_container)
-        tags_row_layout.addWidget(self.tag_input)
+        tags_row_layout.addWidget(tags_label)
+        tags_row_layout.addWidget(self.tag_input, 0)
+        tags_row_layout.addWidget(self.tag_scroll, 1)
 
         # Assemble the top bar
         outer_top_layout.addLayout(controls_layout)
@@ -369,6 +396,8 @@ class TagLabel(QWidget):
         super().__init__()
         self.tag_text = tag_text
         self.on_remove = on_remove
+        # stop this widget from expanding horizontally
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
         # ─── outer layout (transparent) ──────────────────────────────────────
         outer_layout = QHBoxLayout(self)
@@ -390,7 +419,7 @@ class TagLabel(QWidget):
 
         # ─── inner layout (inside the pill) ──────────────────────────────────
         inner_layout = QHBoxLayout(container)
-        inner_layout.setContentsMargins(10, 2, 6, 2)   # symmetric padding
+        inner_layout.setContentsMargins(8, 2, 8, 2)
         inner_layout.setSpacing(4)
 
         # label (left side)
@@ -407,7 +436,7 @@ class TagLabel(QWidget):
         # close button (right side) – transparent, no extra rectangle
         close = QPushButton("×")
         close.setCursor(Qt.CursorShape.PointingHandCursor)
-        close.setFixedSize(24, 24)
+        close.setFixedSize(20, 20)
         close.setStyleSheet(
             """
             QPushButton {
@@ -420,7 +449,7 @@ class TagLabel(QWidget):
             }
             QPushButton:hover {
                 background: #f0f0f0;
-                border-radius: 12px;
+                border-radius: 10px;
             }
         """
         )
