@@ -407,6 +407,8 @@ class StatsPanel(QWidget):
                 add("Total time:", human_duration(info["dur"])); row += 1
             row += 1  # blank line
 
+        self.stats_grid.setRowStretch(row, 1)
+
         # ────── Overlap matrix (right column) ──────
         sel = [m for m in MOD_LIST if (not self.mods or m in self.mods) and st[m]["sessions"]]
         if len(sel) < 2:
