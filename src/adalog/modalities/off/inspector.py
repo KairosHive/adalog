@@ -114,10 +114,15 @@ class OverlapMatrixCanvas(FigureCanvas):
                     matrix[i, j] = dur
 
         # add diagonal with modality durations
-        # for i, m in enumerate(sel):
-        #     matrix[i, i] = mod_durations.get(m, 0.0)
+        for i, m in enumerate(sel):
+            matrix[i, i] = mod_durations.get(m, 0.0)
+        
+        # Mask upper triangle and zero values to make them transparent
+        mask = np.triu(np.ones_like(matrix, dtype=bool), k=1) | (matrix == 0)
+        matrix_masked = np.ma.masked_where(mask, matrix)
+        
         # Display matrix as heatmap
-        cax = ax.matshow(matrix, cmap='viridis', alpha=0.8)
+        cax = ax.matshow(matrix_masked, cmap='viridis', alpha=0.8)
         
         cbar = fig.colorbar(cax, ax=ax, shrink=0.7)
         cbar.ax.yaxis.set_major_formatter(FuncFormatter(lambda x, pos: human_duration(x)))
@@ -135,11 +140,16 @@ class OverlapMatrixCanvas(FigureCanvas):
         ax.set_title("Bimodal Data Length", pad=10, fontsize=10, color='white')
 
         for (i, j), val in np.ndenumerate(matrix):
-            if i > j and val > 0:
+            # Only show text for diagonal and lower triangle and if value is larger than 0
+            if val > 0 and j <= i:
                 ax.text(j, i, human_duration(val), ha='center', va='center', fontsize=7, color='white')
 
         ax.set_aspect('equal')
         ax.grid(False)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.spines['left'].set_visible(False)
         fig.patch.set_alpha(0.0)
         ax.set_facecolor('none')
         fig.tight_layout()
