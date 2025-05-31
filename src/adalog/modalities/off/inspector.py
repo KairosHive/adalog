@@ -34,15 +34,28 @@ PANEL_COLORS = {"Text": "#8ad38a", "Eeg": "#b157d1", "Drawing": "#7a6ed2", "Mete
 MOD_LIST = ["Text", "Eeg", "Drawing", 'Meteo', 'Audio']
 
 
-def human_duration(seconds: float) -> str:
+def human_duration(seconds: float, long: bool = True) -> str:
+    """Format duration in seconds to human-readable string."""
+    if seconds < 1:
+        return f"{seconds:.2f}s"
+    
     s = int(seconds)
     h, rem = divmod(s, 3600)
     m, s = divmod(rem, 60)
+    
+    result = ""
     if h:
-        return f"{h:d}:{m:02d}:{s:02d}s"
-    if m:
-        return f"{m:d}:{s:02d}s"
-    return f"{s}s"
+        if long:
+            result = f"{h}h {m:02d}m {s:02d}s"
+        else:
+            result = f"{h}h {m:02d}m"
+    elif m:
+        result = f"{m}m {s:02d}s"
+    else:
+        result = f"{s}s"
+    if long:
+        return result
+    return result.replace(" ", "")
 
 
 class CheckableCombo(QLineEdit):
@@ -125,7 +138,7 @@ class OverlapMatrixCanvas(FigureCanvas):
         cax = ax.matshow(matrix_masked, cmap='viridis', alpha=0.8)
         
         cbar = fig.colorbar(cax, ax=ax, shrink=0.7)
-        cbar.ax.yaxis.set_major_formatter(FuncFormatter(lambda x, pos: human_duration(x)))
+        cbar.ax.yaxis.set_major_formatter(FuncFormatter(lambda x, pos: human_duration(x, long=False)))
 
         # Make colorbar text white
         cbar.ax.yaxis.set_tick_params(color='white')
@@ -142,7 +155,7 @@ class OverlapMatrixCanvas(FigureCanvas):
         for (i, j), val in np.ndenumerate(matrix):
             # Only show text for diagonal and lower triangle and if value is larger than 0
             if val > 0 and j <= i:
-                ax.text(j, i, human_duration(val), ha='center', va='center', fontsize=7, color='white')
+                ax.text(j, i, human_duration(val, long=False), ha='center', va='center', fontsize=7, color='white')
 
         ax.set_aspect('equal')
         ax.grid(False)
