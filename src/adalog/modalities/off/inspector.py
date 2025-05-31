@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Dict, List, Set, Tuple
-
+import time
 import pandas as pd
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -16,7 +16,9 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,    
 )
+from PyQt6.QtWidgets import QComboBox
 from PyQt6.QtGui import QAction
+from PyQt6.QtCore import QTimer
 from matplotlib.ticker import FuncFormatter
 # ➊  OFF-runtime base class (tiny)
 # ────────────────────────────────────────────────────────────
@@ -423,11 +425,7 @@ class StatsPanel(QWidget):
         self.mat_grid.addWidget(canvas, 0, 0)
 
 
-        
-
-
-
-
+# ────────────────────────────────────────────────────────────
 # ➍  Inspector (dockable) — what the host app loads
 # ────────────────────────────────────────────────────────────
 class Inspector(BaseModalityOff):
@@ -439,18 +437,34 @@ class Inspector(BaseModalityOff):
         # sessions root is provided by the host MainWindow
         root = Path(getattr(self.window(), "sessions_root", "sessions"))
         self.stats = StatsPanel(root)
+        self.loaded_user = None
 
         # compact filter bar ------------------------------------
-        self.user_edt = QLineEdit(placeholderText="user…")
-        self.user_edt.returnPressed.connect(self._load_user)
-        load_btn = QPushButton("Load", clicked=self._load_user)
+        self.user_combo = QComboBox()
+        self.user_combo.setEditable(True)
+        self.user_combo.setPlaceholderText("user…")
+        self.user_combo.lineEdit().returnPressed.connect(self._load_user)
+        self.user_combo.currentTextChanged.connect(self._on_user_text_changed)
+        self.user_combo.setMinimumContentsLength(20)
+        self._last_user_edit = time.time()
+        self.delay_user_edit = QTimer()
+        self.delay_user_edit.setInterval(20)  # 20ms debounce
+        self.delay_user_edit.setSingleShot(True)
+        self.delay_user_edit.timeout.connect(self._load_user)
+        self.debounce_user_edit = QTimer()
+        self.debounce_user_edit.setInterval(1000)  # 1s debounce
+        self.debounce_user_edit.setSingleShot(True)
+        self.debounce_user_edit.timeout.connect(self._load_user)
+        
+        # Populate with discovered users
+        self._populate_users()
 
         self.tags_cb = CheckableCombo(); self.tags_cb.changed.connect(self._refresh)
         self.mods_cb = CheckableCombo(); self.mods_cb.changed.connect(self._refresh)
 
         bar = QHBoxLayout(); bar.setSpacing(6); bar.setContentsMargins(0, 0, 0, 0)
         for w in (
-            QLabel("👤"), self.user_edt, load_btn,
+            QLabel("👤"), self.user_combo,
             QLabel("Tags:"), self.tags_cb,
             QLabel("Modalities:"), self.mods_cb
         ):
@@ -467,8 +481,41 @@ class Inspector(BaseModalityOff):
         self.setMinimumWidth(300)
 
     # ----------------------------------------------------------
+    def _populate_users(self):
+        """Discover and populate user dropdown with existing users."""
+        try:
+            users = []
+            for user_dir in self.stats.root.glob("*"):
+                if user_dir.is_dir() and not user_dir.name.startswith("."):
+                    users.append(user_dir.name)
+            
+            self.user_combo.addItems(sorted(users))
+        except Exception:
+            pass  # If root doesn't exist or other error, just continue
+
+    def _on_user_text_changed(self):
+        """Handle user text changes with debouncing to avoid excessive API calls."""
+        # Calculate time since last edit
+        delta_ms = (time.time() - self._last_user_edit) * 1000
+        self._last_user_edit = time.time()
+
+        # If user hasn't actually changed, stop all timers
+        if self.loaded_user == self.user_combo.currentText().strip():
+            self.delay_user_edit.stop()
+            self.debounce_user_edit.stop()
+            return
+
+        # If enough time has passed or delay timer is already active, use short delay
+        if delta_ms > self.debounce_user_edit.interval() or self.delay_user_edit.isActive():
+            self.delay_user_edit.stop()
+            self.delay_user_edit.start()
+        # If user is still typing rapidly, use longer debounce
+        elif delta_ms < self.debounce_user_edit.interval():
+            self.debounce_user_edit.stop()
+            self.debounce_user_edit.start()
+
     def _load_user(self):
-        user = self.user_edt.text().strip()
+        user = self.user_combo.currentText().strip()
         if not user:
             return
         self.tags_cb.clear(); self.mods_cb.clear()
@@ -492,8 +539,9 @@ class Inspector(BaseModalityOff):
         self._refresh()
 
     def _refresh(self):
+        self.loaded_user = self.user_combo.currentText().strip()
         self.stats.set_filters(
-            self.user_edt.text().strip(),
+            self.loaded_user,
             self.tags_cb.checked(),
             self.mods_cb.checked(),
         )
