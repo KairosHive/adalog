@@ -17,6 +17,7 @@ from typing import Dict, Type
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor, QPalette
+from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -61,11 +62,6 @@ class MainWindow(QMainWindow):
         # Discover all modalities (including Inspector)
         self.off_modalities: Dict[str, Type[QWidget]] = self._discover_off_modalities()
 
-        # # Preload Inspector if present
-        # inspector_cls = self.off_modalities.pop("Inspector", None)
-        # if inspector_cls:
-        #     self._add_dock(inspector_cls(), "Inspector")
-
         # Top bar UI
         bar = QWidget()
         lay = QHBoxLayout(bar)
@@ -78,6 +74,15 @@ class MainWindow(QMainWindow):
         lay.addWidget(add_btn)
         lay.addStretch()
         self.setMenuWidget(bar)
+
+        # Preload Inspector after a delay
+        def _add_inspector() -> None:
+            cls = self.off_modalities.get("Inspector")
+            if cls:
+                self._add_dock(cls(), "Inspector")
+
+        QTimer.singleShot(150, _add_inspector)
+
 
     def _discover_off_modalities(self) -> Dict[str, Type[QWidget]]:
         """
