@@ -370,43 +370,65 @@ class TagLabel(QWidget):
         self.tag_text = tag_text
         self.on_remove = on_remove
 
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(4, 2, 4, 2)  # overall tag container spacing
-        layout.setSpacing(4)
+        # ─── outer layout (transparent) ──────────────────────────────────────
+        outer_layout = QHBoxLayout(self)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+        outer_layout.setSpacing(0)
 
-        self.label = QLabel(tag_text)
-        self.label.setStyleSheet(
-            """
-            color: black;
-            font-weight: bold;
-            padding-left: 8px;
-            padding-right: 8px;
-            padding-top: 4px;
-            padding-bottom: 4px;
-        """
-        )
-
-        self.btn = QPushButton("×")
-        self.btn.setFixedSize(16, 16)
-        self.btn.setStyleSheet(
-            """
-
-        """
-        )
-        self.btn.clicked.connect(self.remove_self)
-
-        layout.addWidget(self.label)
-        layout.addWidget(self.btn)
-
+        # ─── container widget (the actual pill) ──────────────────────────────
+        container = QWidget()
         pastel_style = pastel_color_from_text(tag_text)
-        self.setStyleSheet(
+        container.setObjectName("tagPill")
+        container.setStyleSheet(
             f"""
-            QWidget {{
+            QWidget#tagPill {{
                 {pastel_style}
-                border-radius: 10px;
+                border-radius: 12px;
             }}
         """
         )
+
+        # ─── inner layout (inside the pill) ──────────────────────────────────
+        inner_layout = QHBoxLayout(container)
+        inner_layout.setContentsMargins(10, 2, 6, 2)   # symmetric padding
+        inner_layout.setSpacing(4)
+
+        # label (left side)
+        label = QLabel(tag_text)
+        label.setStyleSheet(
+            f"""
+            QLabel {{
+                color: black;
+                font-weight: bold;
+            }}
+        """
+        )
+
+        # close button (right side) – transparent, no extra rectangle
+        close = QPushButton("×")
+        close.setCursor(Qt.CursorShape.PointingHandCursor)
+        close.setFixedSize(24, 24)
+        close.setStyleSheet(
+            """
+            QPushButton {
+                background: transparent;
+                border: none;
+                color: black;
+                font-weight: bold;
+                padding: 0;
+                margin: 0;
+            }
+            QPushButton:hover {
+                background: #f0f0f0;
+                border-radius: 12px;
+            }
+        """
+        )
+        close.clicked.connect(self.remove_self)
+
+        inner_layout.addWidget(label)
+        inner_layout.addWidget(close)
+        outer_layout.addWidget(container)
 
     def remove_self(self):
         self.on_remove(self)
