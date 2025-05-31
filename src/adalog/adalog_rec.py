@@ -73,6 +73,7 @@ class MainWindow(QMainWindow):
 
         self.panel_selector = QComboBox()
         self.panel_selector.addItems(self.available_modalities.keys())
+        self.panel_selector.setMinimumContentsLength(12)
 
         add_panel_btn = QPushButton("Add Panel")
         add_panel_btn.clicked.connect(self.add_panel)
@@ -164,11 +165,10 @@ class MainWindow(QMainWindow):
         top_toolbar.setLayout(outer_top_layout)
         self.setMenuWidget(top_toolbar)
 
-        # ───── central widget where panels will dock ────────────
-        central_layout = QVBoxLayout()
-        self.central_container = QWidget()
-        self.central_container.setLayout(central_layout)
-        self.setCentralWidget(self.central_container)
+        # configure the main window
+        self.setCentralWidget(None)
+        self.setDockNestingEnabled(True)
+
 
     def update_status_indicator(self):
         color = "#00ff00" if self.session_running else "#ff4444"
@@ -373,9 +373,6 @@ class MainWindow(QMainWindow):
 
         # Remove panel from the list when the dock is closed
         dock_widget.destroyed.connect(lambda _, pi=panel_instance: self.dock_widgets.remove(pi))
-
-        self.addDockWidget(Qt.DockWidgetArea.TopDockWidgetArea, dock_widget)
-        self.dock_widgets.append(panel_instance)
 
 
 def pastel_color_from_text(text):
