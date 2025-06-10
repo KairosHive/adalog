@@ -80,15 +80,15 @@ nodes:
         autotrigger: true
         max_frequency: 30.0
       threshold:
-        average_value: 200.0
+        average_value: 100.0
         no_data_threshold: 200
   filter0:
     _type: Filter
     category: signal
     gui_kwargs:
       pos:
-      - 1043
-      - -143
+      - 1092
+      - -159
       viewers:
         filtered_data:
           collapsed: false
@@ -121,7 +121,7 @@ nodes:
         type: butterworth
       signal:
         buffer_size: 512
-        demean: false
+        demean: true
         detrend: false
         internal_buffer: false
   lslclient0:
@@ -129,8 +129,8 @@ nodes:
     category: inputs
     gui_kwargs:
       pos:
-      - 576
-      - -19
+      - 490
+      - -25
       viewers:
         out:
           collapsed: false
@@ -145,7 +145,7 @@ nodes:
         max_frequency: 30.0
       lsl_stream:
         refresh: true
-        source_name: ''
+        source_name: dsi_streamer_lsl
         stream_name: ''
   oscin0:
     _type: OSCIn
@@ -194,8 +194,8 @@ nodes:
     category: array
     gui_kwargs:
       pos:
-      - 812
-      - -26
+      - 727
+      - -19
       viewers:
         out:
           collapsed: false
@@ -210,7 +210,7 @@ nodes:
         max_frequency: 30.0
       select:
         axis: 0
-        exclude: Right AUX
+        exclude: Right AUX,X1, X2, X3, X1:, X2:, X3:, X1:ECG, CM, TRG
         expand_asterisk: false
         include: ''
   table0:
@@ -344,15 +344,15 @@ nodes:
     category: outputs
     gui_kwargs:
       pos:
-      - 1646
-      - 254
+      - 1710
+      - 268
       viewers: {}
     params:
       Write:
         duration: 0.0
         filename: output.csv
         start: false
-        stop: false
+        stop: true
         timestamps: true
         writing_mode: eeg
       common:
