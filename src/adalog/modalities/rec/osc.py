@@ -8,7 +8,14 @@ import numpy as np
 import pandas as pd
 from oscpy.server import OSCThreadServer
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
-from PyQt6.QtWidgets import QHBoxLayout, QLabel, QSpinBox, QTextEdit, QVBoxLayout
+from PyQt6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QSpinBox,
+    QTextEdit,
+    QVBoxLayout,
+)
 
 from adalog.base_modality import BaseModality
 
@@ -57,6 +64,19 @@ class Osc(BaseModality):
         port_row.addWidget(self.port_spinbox)
         port_row.addStretch()
         layout.addLayout(port_row)
+
+        # Store prefix setting row
+        store_row = QHBoxLayout()
+        store_row.addWidget(QLabel("Store Prefix:"))
+        self.store_prefix_input = QLineEdit()
+        self.store_prefix_input.setText("_store")
+        self.store_prefix_input.setToolTip(
+            "Messages sent to /<prefix>/filename will save their content to filename.txt in the session folder.\n"
+            "Example: if prefix is '_store', sending a message to '/_store/myfile' will create myfile.txt"
+        )
+        store_row.addWidget(self.store_prefix_input)
+        store_row.addStretch()
+        layout.addLayout(store_row)
 
         # Status label
         self.status_label = QLabel("OSC Server: Starting...")
@@ -125,6 +145,12 @@ class Osc(BaseModality):
                     else:
                         value.append(arg)
 
+            # Check if this is a store message
+            store_prefix = self.store_prefix_input.text().strip()
+            if store_prefix and address_str.startswith(f"/{store_prefix}/"):
+                self._handle_store_message(address_str, value, store_prefix)
+                return  # Don't process as regular message
+
             # Update recent addresses tracking
             current_time = time.time()
             with self.messages_lock:
@@ -140,6 +166,46 @@ class Osc(BaseModality):
 
         except Exception as e:
             print(f"Error in OSC callback: {e}")
+
+    def _handle_store_message(self, address, value, store_prefix):
+        """Handle special store messages that save content to text files."""
+        try:
+            if not self.session_dir:
+                print(f"Cannot store message: no session directory set")
+                return
+
+            # Extract filename from address (remove the /<prefix>/ part)
+            prefix_part = f"/{store_prefix}/"
+            if not address.startswith(prefix_part):
+                return
+
+            filename = address[len(prefix_part) :]
+            if not filename:
+                print(f"Store message has no filename: {address}")
+                return
+
+            # Sanitize filename to prevent directory traversal
+            filename = filename.replace("/", "_").replace("\\", "_")
+            if not filename.endswith(".txt"):
+                filename += ".txt"
+
+            # Convert value to string content
+            if value is None:
+                content = ""
+            elif isinstance(value, list):
+                content = "\n".join(str(item) for item in value)
+            else:
+                content = str(value)
+
+            # Save to file
+            file_path = os.path.join(self.session_dir, filename)
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(content)
+
+            print(f"Stored content to: {filename}")
+
+        except Exception as e:
+            print(f"Error handling store message: {e}")
 
     def _save_message(self, address, value):
         """Save OSC message to CSV file."""

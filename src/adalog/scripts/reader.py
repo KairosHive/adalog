@@ -39,6 +39,7 @@ class WordReaderWidget(QMainWindow):
         self.is_running = False
         self.is_paused = False
         self.osc_client: Optional[OSCClient] = None
+        self.original_text = ""
 
         # Timers
         self.word_timer = QTimer()
@@ -237,6 +238,8 @@ class WordReaderWidget(QMainWindow):
         if not text:
             return
 
+        # Store original text for formatting preservation
+        self.original_text = text
         self.words = text.split()
         self.current_word_index = 0
         self.is_running = True
@@ -346,9 +349,50 @@ class WordReaderWidget(QMainWindow):
         """Send the current word via OSC."""
         if self.osc_client:
             try:
+                # Send current word
                 self.osc_client.send_message(b"/reader/word", [word.encode()])
+
+                # Send text up to current word with preserved formatting
+                text_up_to_current = self._get_text_up_to_current_word()
+                self.osc_client.send_message(b"/_store/text_final", [text_up_to_current.encode()])
+
             except Exception as e:
                 print(f"OSC send error: {e}")
+
+    def _get_text_up_to_current_word(self) -> str:
+        """Get the original text up to and including the current word, preserving formatting."""
+        if self.current_word_index >= len(self.words):
+            return self.original_text
+
+        # Count characters in the original text to find the position of the current word
+        words_so_far = self.words[: self.current_word_index + 1]
+        current_word = self.words[self.current_word_index]
+
+        # Find the position of the current word in the original text
+        # We need to account for the fact that split() removes whitespace/formatting
+        char_count = 0
+        word_index = 0
+
+        for i, char in enumerate(self.original_text):
+            if char.isspace():
+                char_count += 1
+                continue
+
+            # Check if we're at the start of a word
+            if char_count == 0 or self.original_text[i - 1].isspace():
+                if word_index < len(words_so_far):
+                    current_checking_word = words_so_far[word_index]
+                    # Check if the word at this position matches
+                    if self.original_text[i : i + len(current_checking_word)] == current_checking_word:
+                        if word_index == self.current_word_index:
+                            # Found our target word, return text up to end of this word
+                            return self.original_text[: i + len(current_checking_word)]
+                        word_index += 1
+
+            char_count += 1
+
+        # Fallback: return the entire text if we couldn't find the exact position
+        return self.original_text
 
     def _toggle_pause(self):
         """Toggle pause state."""
