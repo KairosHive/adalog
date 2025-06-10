@@ -474,7 +474,8 @@ panel_colors = {
     "Midi": "#deb865",
     "Eeg": "#b157d1",
     "Meteo": "#d45d5d",
-    "Drawing": "#7a6ed2",
+    "Drawing": "#5dcad4",
+    "Osc": "#ff8c44",
 }
 
 
