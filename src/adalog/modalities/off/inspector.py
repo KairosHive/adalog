@@ -32,8 +32,15 @@ import numpy as np
 # ➋  Small helpers
 # ────────────────────────────────────────────────────────────
 SF_EEG = 256
-PANEL_COLORS = {"Text": "#8ad38a", "Eeg": "#b157d1", "Drawing": "#7a6ed2", "Meteo": "#d45d5d", "Audio": "#5579d4"}
-MOD_LIST = ["Text", "Eeg", "Drawing", 'Meteo', 'Audio']
+PANEL_COLORS = {
+    "Text": "#8ad38a",
+    "Eeg": "#b157d1",
+    "Drawing": "#7a6ed2",
+    "Meteo": "#d45d5d",
+    "Audio": "#5579d4",
+    "Osc": "#d4a557",  # Added Osc modality color
+}
+MOD_LIST = ["Text", "Eeg", "Drawing", "Meteo", "Audio", "Osc"]  # Added Osc
 
 
 def human_duration(seconds: float, long: bool = True) -> str:
@@ -139,8 +146,22 @@ class OverlapMatrixCanvas(FigureCanvas):
         # Display matrix as heatmap
         cax = ax.matshow(matrix_masked, cmap='viridis', alpha=0.8)
         
+        # Custom formatter: show seconds only if <10min
+        def short_human_duration(val):
+            if val < 600:
+                return human_duration(val, long=False)
+            else:
+                # Show only h and m, no seconds
+                s = int(val)
+                h, rem = divmod(s, 3600)
+                m, _ = divmod(rem, 60)
+                if h:
+                    return f"{h}h{m:02d}"
+                else:
+                    return f"{m}m"
+        
         cbar = fig.colorbar(cax, ax=ax, shrink=0.7)
-        cbar.ax.yaxis.set_major_formatter(FuncFormatter(lambda x, pos: human_duration(x, long=False)))
+        cbar.ax.yaxis.set_major_formatter(FuncFormatter(lambda x, pos: short_human_duration(x)))
 
         # Make colorbar text white
         cbar.ax.yaxis.set_tick_params(color='white')
@@ -157,7 +178,7 @@ class OverlapMatrixCanvas(FigureCanvas):
         for (i, j), val in np.ndenumerate(matrix):
             # Only show text for diagonal and lower triangle and if value is larger than 0
             if val > 0 and j <= i:
-                ax.text(j, i, human_duration(val, long=False), ha='center', va='center', fontsize=7, color='white')
+                ax.text(j, i, short_human_duration(val), ha='center', va='center', fontsize=7, color='white')
 
         ax.set_aspect('equal')
         ax.grid(False)
@@ -351,6 +372,24 @@ class StatsPanel(QWidget):
                     data["Audio"]["sessions"] += 1
                     data["Audio"]["dur"] += dur
                     present_dur["Audio"] = dur
+            # Osc ---------------------------------------------------
+            if not self.mods or "Osc" in self.mods:
+                osc_dir = sess / "Osc"
+                csv = osc_dir / "osc.csv"
+                msgs, dur = 0, 0.0
+                if csv.exists():
+                    try:
+                        df = pd.read_csv(csv)
+                        msgs = len(df)
+                        dur = span(csv)
+                    except Exception:
+                        pass
+                if msgs or dur:
+                    present.add("Osc")
+                    data["Osc"]["sessions"] += 1
+                    data["Osc"]["words"] += msgs  # treat messages as "words"
+                    data["Osc"]["dur"] += dur
+                    present_dur["Osc"] = dur
             # overlaps ---------------------------------------------
             for a in present:
                 for b in present:
@@ -388,10 +427,10 @@ class StatsPanel(QWidget):
                 self.stats_grid.addWidget(QLabel(value), row, 1)
 
             add("Sessions:", str(info["sessions"])); row += 1
-            if mod == "Text":
-                add("Total words:", f"{info['words']:,}"); row += 1
+            if mod == "Text" or mod == "Osc":
+                add("Total messages:" if mod == "Osc" else "Total words:", f"{info['words']:,}"); row += 1
                 avg = info["words"] / info["sessions"] if info["sessions"] else 0
-                add("Avg words/session:", f"{avg:.1f}"); row += 1
+                add("Avg/messages per session:" if mod == "Osc" else "Avg words/session:", f"{avg:.1f}"); row += 1
                 if info["dur"]:
                     add("Total time:", human_duration(info["dur"])); row += 1
             elif mod == "Eeg":
