@@ -67,6 +67,10 @@ links:
   node_out: oscin0
   slot_in: input_table
   slot_out: message
+- node_in: tableselectstring1
+  node_out: oscin0
+  slot_in: input_table
+  slot_out: message
 - node_in: buffer0
   node_out: reduce0
   slot_in: val
@@ -94,6 +98,10 @@ links:
 - node_in: lslclient0
   node_out: tableselectstring0
   slot_in: source_name
+  slot_out: output_string
+- node_in: loadfile0
+  node_out: tableselectstring1
+  slot_in: file
   slot_out: output_string
 nodes:
   arrayawait0:
@@ -145,8 +153,8 @@ nodes:
     category: signal
     gui_kwargs:
       pos:
-      - 695
-      - 254
+      - 551
+      - 206
       viewers:
         out:
           collapsed: false
@@ -398,7 +406,7 @@ nodes:
         autotrigger: false
         max_frequency: 1.0
       file:
-        filename: 06-27-2025 06.48 PM.m4a
+        filename: ''
         freq_multiplier: 1.0
         header: 0
         index_column: true
@@ -410,8 +418,8 @@ nodes:
     category: inputs
     gui_kwargs:
       pos:
-      - 57
-      - 265
+      - -70
+      - 208
       viewers:
         out:
           collapsed: false
@@ -457,8 +465,8 @@ nodes:
     category: array
     gui_kwargs:
       pos:
-      - 475
-      - 263
+      - 342
+      - 206
       viewers:
         out:
           collapsed: false
@@ -479,8 +487,8 @@ nodes:
     category: array
     gui_kwargs:
       pos:
-      - 272
-      - 266
+      - 139
+      - 209
       viewers:
         out:
           collapsed: false
@@ -605,6 +613,27 @@ nodes:
         max_frequency: 30.0
       selection:
         key: /lsl_stream_selected
+  tableselectstring1:
+    _type: TableSelectString
+    category: misc
+    gui_kwargs:
+      pos:
+      - -344
+      - 345
+      viewers:
+        output_string:
+          collapsed: false
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+    params:
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+      selection:
+        key: /audio_file_path
   writecsv0:
     _type: WriteCsv
     category: outputs

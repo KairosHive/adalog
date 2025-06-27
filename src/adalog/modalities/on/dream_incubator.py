@@ -1,7 +1,11 @@
 import os
+from datetime import datetime
 from pathlib import Path
 from threading import Thread
 
+import numpy as np
+import sounddevice as sd
+import soundfile as sf
 from goofi.manager import Manager
 from oscpy.client import OSCClient
 from oscpy.server import OSCThreadServer
@@ -9,6 +13,7 @@ from pylsl import resolve_streams
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QComboBox,
+    QFileDialog,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -17,6 +22,7 @@ from PyQt6.QtWidgets import (
 )
 
 from adalog.base_modality import BaseModalityOn
+from adalog.utils import get_asset_path
 
 
 class DreamIncubator(BaseModalityOn):
@@ -30,6 +36,13 @@ class DreamIncubator(BaseModalityOn):
         self.osc_server.bind(b"/lziv_complexity", self.update_lziv_complexity)
         self.osc_server.bind(b"/duration", self.update_duration)  # New OSC binding for duration
         self.osc_client = OSCClient("127.0.0.1", 5010)  # OSC client to send messages to Goofi
+
+        self.is_recording_audio = False
+        self.audio_frames = []
+        self.audio_samplerate = 44100  # Default sample rate
+        self.audio_channels = 1  # Default channels
+        self.audio_stream = None
+        self.recorded_audio_path = None
 
         # Start Goofi patch immediately in a separate thread
         patch_path = Path(__file__).parent / "dream_incubator.gfi"
@@ -67,6 +80,21 @@ class DreamIncubator(BaseModalityOn):
 
         self.duration_label = QLabel("Duration: 00:00")
         layout.addWidget(self.duration_label)
+
+        # Audio File Selection and Recording
+        audio_layout = QHBoxLayout()
+        self.select_audio_btn = QPushButton("Select Audio File")
+        self.select_audio_btn.clicked.connect(self.select_audio_file)
+        audio_layout.addWidget(self.select_audio_btn)
+
+        self.record_audio_btn = QPushButton("Start Recording")
+        self.record_audio_btn.clicked.connect(self.toggle_audio_recording)
+        audio_layout.addWidget(self.record_audio_btn)
+
+        layout.addLayout(audio_layout)
+
+        self.current_audio_label = QLabel("Current Audio: None")
+        layout.addWidget(self.current_audio_label)
 
         # LSL Stream Selector
         row = QHBoxLayout()
@@ -121,6 +149,45 @@ class DreamIncubator(BaseModalityOn):
         minutes, seconds = divmod(int(value), 60)
         self.duration_label.setText(f"Duration: {minutes:02d}:{seconds:02d}")
 
+    def select_audio_file(self):
+        file_dialog = QFileDialog()
+        file_path, _ = file_dialog.getOpenFileName(self, "Select Audio File", "", "Audio Files (*.wav *.flac *.ogg)")
+        if file_path:
+            self.current_audio_label.setText(f"Current Audio: {Path(file_path).name}")
+            self.send_audio_path_to_goofi(file_path)
+
+    def toggle_audio_recording(self):
+        if not self.is_recording_audio:
+            self.audio_frames = []
+            self.audio_stream = sd.InputStream(
+                samplerate=self.audio_samplerate, channels=self.audio_channels, callback=self.audio_callback
+            )
+            self.audio_stream.start()
+            self.is_recording_audio = True
+            self.record_audio_btn.setText("Stop Recording")
+            self.current_audio_label.setText("Current Audio: Recording...")
+        else:
+            self.audio_stream.stop()
+            self.audio_stream.close()
+            self.is_recording_audio = False
+            self.record_audio_btn.setText("Start Recording")
+
+            # Save the recorded audio
+            output_dir = Path.home() / ".adalog_audio_recordings"
+            output_dir.mkdir(parents=True, exist_ok=True)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            file_name = f"recorded_audio_{timestamp}.wav"
+            self.recorded_audio_path = str(output_dir / file_name)
+            sf.write(self.recorded_audio_path, np.concatenate(self.audio_frames), self.audio_samplerate)
+            self.current_audio_label.setText(f"Current Audio: {file_name}")
+            self.send_audio_path_to_goofi(self.recorded_audio_path)
+
+    def audio_callback(self, indata, frames, time, status):
+        self.audio_frames.append(indata.copy())
+
+    def send_audio_path_to_goofi(self, audio_path):
+        self.osc_client.send_message(b"/audio_file_path", [audio_path.encode()])
+
     def send_selected_stream(self, stream_name):
         if stream_name and "No streams" not in stream_name:
             self.osc_client.send_message(b"/lsl_stream_selected", [stream_name.encode()])
@@ -148,6 +215,9 @@ class DreamIncubator(BaseModalityOn):
     def closeEvent(self, event):
         self.osc_server.terminate_server()
         self.osc_server.join_server()
+        if self.is_recording_audio and self.audio_stream:
+            self.audio_stream.stop()
+            self.audio_stream.close()
         if self.goofi_manager:
             self.goofi_manager.stop()
         if self.goofi_thread and self.goofi_thread.is_alive():
