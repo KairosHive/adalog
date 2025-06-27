@@ -1,8 +1,24 @@
 links:
-- node_in: extendedtable0
-  node_out: constantarray0
-  slot_in: array_input2
+- node_in: cardiorespiratoryvariability0
+  node_out: buffer0
+  slot_in: data
   slot_out: out
+- node_in: extendedtable0
+  node_out: cardiorespiratoryvariability0
+  slot_in: array_input3
+  slot_out: SDNN
+- node_in: extendedtable0
+  node_out: cardiorespiratoryvariability0
+  slot_in: array_input4
+  slot_out: SDSD
+- node_in: extendedtable0
+  node_out: cardiorespiratoryvariability0
+  slot_in: array_input5
+  slot_out: RMSSD
+- node_in: select0
+  node_out: cardiorespiratoryvariability0
+  slot_in: data
+  slot_out: Rate
 - node_in: oscout0
   node_out: extendedtable0
   slot_in: data
@@ -14,6 +30,10 @@ links:
 - node_in: reduce0
   node_out: normalization0
   slot_in: array
+  slot_out: normalized
+- node_in: buffer0
+  node_out: normalization0
+  slot_in: val
   slot_out: normalized
 - node_in: tableselectarray0
   node_out: oscin0
@@ -47,14 +67,22 @@ links:
   node_out: tableselectstring0
   slot_in: fname
   slot_out: output_string
+- node_in: reduce1
+  node_out: select0
+  slot_in: array
+  slot_out: out
+- node_in: extendedtable0
+  node_out: reduce1
+  slot_in: array_input2
+  slot_out: out
 nodes:
-  constantarray0:
-    _type: ConstantArray
-    category: inputs
+  buffer0:
+    _type: Buffer
+    category: signal
     gui_kwargs:
       pos:
-      - 286
-      - -1
+      - 514
+      - 656
       viewers:
         out:
           collapsed: false
@@ -64,13 +92,98 @@ nodes:
           viewer_idx: 0
           width: 175
     params:
+      buffer:
+        axis: -1
+        reset: false
+        size: 20.0
+        unit: seconds
       common:
-        autotrigger: true
+        autotrigger: false
         max_frequency: 30.0
-      constant:
-        graph: none
-        shape: '1'
-        value: 120.0
+  cardiorespiratoryvariability0:
+    _type: CardioRespiratoryVariability
+    category: analysis
+    gui_kwargs:
+      pos:
+      - 752
+      - 597
+      viewers:
+        HF:
+          collapsed: true
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+        LF:
+          collapsed: true
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+        LF/HF:
+          collapsed: true
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+        Mean:
+          collapsed: true
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+        Peaks:
+          collapsed: true
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+        RMSSD:
+          collapsed: true
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+        Rate:
+          collapsed: false
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+        SDNN:
+          collapsed: true
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+        SDSD:
+          collapsed: true
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+        VLF:
+          collapsed: true
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+    params:
+      cardiorespiratory:
+        input_type: ecg
+      common:
+        autotrigger: false
+        max_frequency: 30.0
   extendedtable0:
     _type: ExtendedTable
     category: inputs
@@ -94,9 +207,9 @@ nodes:
         param1: /ecg_raw
         param10: value10
         param2: /ecg_bpm
-        param3: value3
-        param4: value4
-        param5: value5
+        param3: /sdnn
+        param4: /sdsd
+        param5: /rmssd
         param6: value6
         param7: value7
         param8: value8
@@ -199,6 +312,52 @@ nodes:
       reduce:
         axis: 0
         method: max
+  reduce1:
+    _type: Reduce
+    category: array
+    gui_kwargs:
+      pos:
+      - 1269
+      - 761
+      viewers:
+        out:
+          collapsed: false
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+    params:
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+      reduce:
+        axis: 0
+        method: mean
+  select0:
+    _type: Select
+    category: array
+    gui_kwargs:
+      pos:
+      - 1038
+      - 748
+      viewers:
+        out:
+          collapsed: false
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+    params:
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+      select:
+        axis: 0
+        exclude: ''
+        expand_asterisk: false
+        include: '4500:'
   serialstream0:
     _type: SerialStream
     category: inputs
@@ -221,7 +380,7 @@ nodes:
       serial:
         port: COM9
         protocol: ECG
-        sfreq: 512
+        sfreq: 256
   tableselectarray0:
     _type: TableSelectArray
     category: misc
