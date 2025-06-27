@@ -476,6 +476,7 @@ panel_colors = {
     "Meteo": "#d45d5d",
     "Drawing": "#5dcad4",
     "Osc": "#ff8c44",
+    "Ecg": "#66c2a5",
 }
 
 

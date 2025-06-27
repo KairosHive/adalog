@@ -1,0 +1,306 @@
+links:
+- node_in: extendedtable0
+  node_out: constantarray0
+  slot_in: array_input2
+  slot_out: out
+- node_in: oscout0
+  node_out: extendedtable0
+  slot_in: data
+  slot_out: table
+- node_in: writecsv0
+  node_out: extendedtable0
+  slot_in: table_input
+  slot_out: table
+- node_in: reduce0
+  node_out: normalization0
+  slot_in: array
+  slot_out: normalized
+- node_in: tableselectarray0
+  node_out: oscin0
+  slot_in: input_table
+  slot_out: message
+- node_in: tableselectarray1
+  node_out: oscin0
+  slot_in: input_table
+  slot_out: message
+- node_in: tableselectstring0
+  node_out: oscin0
+  slot_in: input_table
+  slot_out: message
+- node_in: extendedtable0
+  node_out: reduce0
+  slot_in: array_input1
+  slot_out: out
+- node_in: normalization0
+  node_out: serialstream0
+  slot_in: data
+  slot_out: out
+- node_in: writecsv0
+  node_out: tableselectarray0
+  slot_in: start
+  slot_out: output_array
+- node_in: writecsv0
+  node_out: tableselectarray1
+  slot_in: stop
+  slot_out: output_array
+- node_in: writecsv0
+  node_out: tableselectstring0
+  slot_in: fname
+  slot_out: output_string
+nodes:
+  constantarray0:
+    _type: ConstantArray
+    category: inputs
+    gui_kwargs:
+      pos:
+      - 286
+      - -1
+      viewers:
+        out:
+          collapsed: false
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+    params:
+      common:
+        autotrigger: true
+        max_frequency: 30.0
+      constant:
+        graph: none
+        shape: '1'
+        value: 120.0
+  extendedtable0:
+    _type: ExtendedTable
+    category: inputs
+    gui_kwargs:
+      pos:
+      - 640
+      - 24
+      viewers:
+        table:
+          collapsed: false
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+    params:
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+      table:
+        param1: /ecg_raw
+        param10: value10
+        param2: /ecg_bpm
+        param3: value3
+        param4: value4
+        param5: value5
+        param6: value6
+        param7: value7
+        param8: value8
+        param9: value9
+  normalization0:
+    _type: Normalization
+    category: signal
+    gui_kwargs:
+      pos:
+      - 394
+      - 392
+      viewers:
+        normalized:
+          collapsed: false
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+    params:
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+      minmax:
+        feature_max: 1.0
+        feature_min: 0.0
+      normalization:
+        axis: -1
+        buffer_size: 5096
+        method: minmax
+        reset: false
+      quantile:
+        n_quantiles: 1000
+        output_distribution: uniform
+      robust:
+        quantile_max: 75
+        quantile_min: 25
+        unit_variance: false
+  oscin0:
+    _type: OSCIn
+    category: inputs
+    gui_kwargs:
+      pos:
+      - -36
+      - 601
+      viewers:
+        message:
+          collapsed: false
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+    params:
+      common:
+        autotrigger: true
+        max_frequency: 30.0
+      osc:
+        address: 0.0.0.0
+        clear: false
+        keep_messages: false
+        port: 9124
+  oscout0:
+    _type: OSCOut
+    category: outputs
+    gui_kwargs:
+      pos:
+      - 884
+      - 225
+      viewers: {}
+    params:
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+      osc:
+        address: localhost
+        broadcast: false
+        bundle: false
+        port: 9123
+        prefix: ''
+  reduce0:
+    _type: Reduce
+    category: array
+    gui_kwargs:
+      pos:
+      - 381
+      - 180
+      viewers:
+        out:
+          collapsed: false
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+    params:
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+      reduce:
+        axis: 0
+        method: max
+  serialstream0:
+    _type: SerialStream
+    category: inputs
+    gui_kwargs:
+      pos:
+      - 127
+      - 205
+      viewers:
+        out:
+          collapsed: false
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+    params:
+      common:
+        autotrigger: true
+        max_frequency: 30.0
+      serial:
+        port: COM9
+        protocol: ECG
+        sfreq: 512
+  tableselectarray0:
+    _type: TableSelectArray
+    category: misc
+    gui_kwargs:
+      pos:
+      - 192
+      - 596
+      viewers:
+        output_array:
+          collapsed: false
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+    params:
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+      selection:
+        key: /recording_start
+  tableselectarray1:
+    _type: TableSelectArray
+    category: misc
+    gui_kwargs:
+      pos:
+      - 194
+      - 792
+      viewers:
+        output_array:
+          collapsed: false
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+    params:
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+      selection:
+        key: /recording_stop
+  tableselectstring0:
+    _type: TableSelectString
+    category: misc
+    gui_kwargs:
+      pos:
+      - 192
+      - 997
+      viewers:
+        output_string:
+          collapsed: false
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+    params:
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+      selection:
+        key: /recording_path
+  writecsv0:
+    _type: WriteCsv
+    category: outputs
+    gui_kwargs:
+      pos:
+      - 871
+      - 328
+      viewers: {}
+    params:
+      Write:
+        duration: 0.0
+        filename: ''
+        start: false
+        stop: false
+        timestamps: true
+        writing_mode: default
+      common:
+        autotrigger: false
+        max_frequency: 30.0
