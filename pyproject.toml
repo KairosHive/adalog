@@ -11,6 +11,7 @@ line-length = 128
 [project.scripts]
 adalog-off = "adalog.adalog_off:main"
 adalog-rec = "adalog.adalog_rec:main"
+adalog-on = "adalog.adalog_on:main"
 
 [project]
 classifiers = [

@@ -1,9 +1,10 @@
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QWidget
 from abc import ABC, abstractmethod
 
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QWidget
 
-class BaseModality(QWidget):
+
+class BaseModalityOn(QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # ensure the QSS background rules are honoured
@@ -13,13 +14,14 @@ class BaseModality(QWidget):
     def setup_ui(self):
         pass
 
-    def start_recording(self, session_dir):
-        """Called when a session starts. Can be overridden."""
+    def start(self):
+        """Called when the system starts. Can be overridden."""
         pass
 
-    def stop_recording(self):
-        """Called when a session stops. Can be overridden."""
+    def stop(self):
+        """Called when the system stops. Can be overridden."""
         pass
+
 
 """
 Lightweight parent class for *offline* (post-hoc) panels.
@@ -31,6 +33,7 @@ stay decoupled from the live-recording API.
 """
 
 from abc import ABC
+
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication, QWidget
 
@@ -56,7 +59,7 @@ class BaseModalityOff(QWidget):
         # call optional helper implemented by subclasses
         if hasattr(self, "setup_ui"):
             try:
-                self.setup_ui()          # type: ignore[attr-defined]
+                self.setup_ui()  # type: ignore[attr-defined]
             except TypeError:
                 # subclass did not declare setup_ui(self) – ignore
                 pass
@@ -72,5 +75,7 @@ class BaseModalityOff(QWidget):
     #
     # def setup_ui(self):
     #     "...build widget tree here..."
+    #
+    # No abstract methods required for inspection-only panels.
     #
     # No abstract methods required for inspection-only panels.

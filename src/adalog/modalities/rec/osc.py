@@ -17,10 +17,10 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 
-from adalog.base_modality import BaseModality
+from adalog.base_modality import BaseModalityRec
 
 
-class Osc(BaseModality):
+class Osc(BaseModalityRec):
     """Adalog panel that records incoming OSC messages to a CSV file."""
 
     # Signal emitted when new OSC message arrives

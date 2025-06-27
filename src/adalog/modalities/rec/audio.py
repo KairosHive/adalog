@@ -1,16 +1,20 @@
-from PyQt6.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QProgressBar
-from PyQt6.QtCore import Qt, QTimer
-from adalog.base_modality import BaseModality
-
-import sounddevice as sd
-import soundfile as sf
-import numpy as np
-import queue, os, threading, time
+import os
+import queue
+import threading
+import time
 from datetime import datetime
 from threading import Thread
 
+import numpy as np
+import sounddevice as sd
+import soundfile as sf
+from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QProgressBar, QVBoxLayout
 
-class Audio(BaseModality):
+from adalog.base_modality import BaseModalityRec
+
+
+class Audio(BaseModalityRec):
     """
     Live level meter (always) + file writer (only while a session is running).
     The meter is refreshed by a QTimer (30 FPS) to avoid Qt-queue flooding.
@@ -145,6 +149,10 @@ class Audio(BaseModality):
 
     # ───────────────────────── housekeeping ────────────────────────────────
     def closeEvent(self, _event):
+        self.stop_recording()
+        if self._stream:
+            self._stream.stop()
+            self._stream.close()
         self.stop_recording()
         if self._stream:
             self._stream.stop()

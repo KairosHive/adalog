@@ -15,23 +15,31 @@ The panel follows the same life‑cycle hooks as the other modalities:
 ``start_recording(session_dir)`` and ``stop_recording()``.
 """
 
-from datetime import datetime
 import os
+from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
-from PyQt6.QtCore import Qt, pyqtSignal, QSize
-from PyQt6.QtGui import QImage, QMouseEvent, QPainter, QPen, QColor, QPixmap, QResizeEvent
+from PyQt6.QtCore import QSize, Qt, pyqtSignal
+from PyQt6.QtGui import (
+    QColor,
+    QImage,
+    QMouseEvent,
+    QPainter,
+    QPen,
+    QPixmap,
+    QResizeEvent,
+)
 from PyQt6.QtWidgets import (
     QColorDialog,
     QHBoxLayout,
     QLabel,
     QPushButton,
-    QVBoxLayout,
     QSlider,
+    QVBoxLayout,
 )
 
-from adalog.base_modality import BaseModality
+from adalog.base_modality import BaseModalityRec
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -94,7 +102,7 @@ class DrawingCanvas(QLabel):
 # ──────────────────────────────────────────────────────────────────────────────
 # Panel class
 # ──────────────────────────────────────────────────────────────────────────────
-class Drawing(BaseModality):
+class Drawing(BaseModalityRec):
     """Dockable Drawing panel for Adalog."""
 
     def __init__(self):
@@ -164,6 +172,14 @@ class Drawing(BaseModality):
 
         drawings_dir = Path(self.session_dir)
         drawings_dir.mkdir(exist_ok=True)
+
+        ts = datetime.utcnow().isoformat().replace(":", "-").replace(".", "-")
+        filename = f"{ts}.png"
+        full_path = drawings_dir / filename
+        self.canvas.image.save(str(full_path))
+
+        csv_path = drawings_dir / "drawings.csv"
+        pd.DataFrame([[ts, filename]], columns=["timestamp", "filename"]).to_csv(csv_path, mode="a", header=False, index=False)
 
         ts = datetime.utcnow().isoformat().replace(":", "-").replace(".", "-")
         filename = f"{ts}.png"

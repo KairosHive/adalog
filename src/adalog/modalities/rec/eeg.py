@@ -1,17 +1,18 @@
-from PyQt6.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QComboBox
-from PyQt6.QtCore import Qt
-from adalog.base_modality import BaseModality
+import os
+from pathlib import Path
+from threading import Thread, Timer
+
+from goofi.manager import Manager
 from oscpy.client import OSCClient
 from oscpy.server import OSCThreadServer
-from threading import Thread
-from goofi.manager import Manager
-from pathlib import Path
 from pylsl import resolve_streams
-import os
-from threading import Timer
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
+
+from adalog.base_modality import BaseModalityRec
 
 
-class Eeg(BaseModality):
+class Eeg(BaseModalityRec):
     def __init__(self):
         super().__init__()
         self.recording = False

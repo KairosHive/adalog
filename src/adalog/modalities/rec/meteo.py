@@ -21,16 +21,11 @@ from pathlib import Path
 
 import pandas as pd
 import requests
-from PyQt6.QtCore import QTimer, Qt
+from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QColor, QFont, QPainter, QPen
-from PyQt6.QtWidgets import (
-    QLabel,
-    QHBoxLayout,
-    QVBoxLayout,
-    QWidget,
-)
+from PyQt6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
-from adalog.base_modality import BaseModality
+from adalog.base_modality import BaseModalityRec
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -136,7 +131,7 @@ R_TEMP = RangeDef(0, 500_000, 2e5, 2.5e5)
 # ════════════════════════════════════════════════════════════════════
 #  Main panel
 # ════════════════════════════════════════════════════════════════════
-class Meteo(BaseModality, QWidget):
+class Meteo(BaseModalityRec, QWidget):
     """Solar-wind & geomagnetic-activity panel with gauges."""
 
     _POLL_MS = 10_000  # 10 s

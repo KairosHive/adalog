@@ -1,10 +1,12 @@
-from PyQt6.QtWidgets import QVBoxLayout, QTextEdit
-from PyQt6.QtCore import pyqtSignal, Qt
-from adalog.base_modality import BaseModality
-from datetime import datetime
-import os
-import pandas as pd
 import io
+import os
+from datetime import datetime
+
+import pandas as pd
+from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtWidgets import QTextEdit, QVBoxLayout
+
+from adalog.base_modality import BaseModalityRec
 
 
 class SpaceTextEdit(QTextEdit):
@@ -30,7 +32,7 @@ class SpaceTextEdit(QTextEdit):
             self.wordEnded.emit()
 
 
-class Text(BaseModality):
+class Text(BaseModalityRec):
     def __init__(self):
         super().__init__()
         self.recording = False
@@ -97,5 +99,7 @@ class Text(BaseModality):
     def _save_word(self, timestamp, word):
         """Append a single timestamped word row to pheno.csv."""
         csv_path = os.path.join(self.session_dir, "text.csv")
+        df = pd.DataFrame([[timestamp, word]], columns=["timestamp", "content"])
+        df.to_csv(csv_path, mode="a", header=not os.path.exists(csv_path), index=False)
         df = pd.DataFrame([[timestamp, word]], columns=["timestamp", "content"])
         df.to_csv(csv_path, mode="a", header=not os.path.exists(csv_path), index=False)

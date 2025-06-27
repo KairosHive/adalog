@@ -1,10 +1,13 @@
-from PyQt6.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QComboBox
-from PyQt6.QtCore import Qt, pyqtSignal
-from adalog.base_modality import BaseModality
-
+import os
+import time
 from datetime import datetime, timezone
-import time, os, mido
-from mido import MidiFile, MidiTrack, MetaMessage, bpm2tempo, second2tick
+
+import mido
+from mido import MetaMessage, MidiFile, MidiTrack, bpm2tempo, second2tick
+from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
+
+from adalog.base_modality import BaseModalityRec
 
 # ---------------------------------------------------------------------------
 #  MIDI messages that cannot be stored in a Standard MIDI File (SMF v0/1)
@@ -13,7 +16,7 @@ from mido import MidiFile, MidiTrack, MetaMessage, bpm2tempo, second2tick
 REALTIME_TYPES = {"clock", "start", "continue", "stop", "active_sensing", "reset", "timecode"}
 
 
-class Midi(BaseModality):
+class Midi(BaseModalityRec):
     """Adalog panel that records incoming MIDI data to a *.mid* file."""
 
     # emitted when a new event is captured so the GUI can update safely
@@ -133,6 +136,10 @@ class Midi(BaseModality):
         self._events_changed.emit(len(self._events))
 
     # ───────────────────────── housekeeping ───────────────────────────────
+    def closeEvent(self, _event):
+        # ensure graceful shutdown if panel is closed independently
+        self.stop_recording()
+
     def closeEvent(self, _event):
         # ensure graceful shutdown if panel is closed independently
         self.stop_recording()
