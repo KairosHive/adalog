@@ -32,8 +32,8 @@ class DreamIncubator(BaseModalityOn):
         self.goofi_manager = None
         self.osc_server = OSCThreadServer()
         self.osc_server.listen("127.0.0.1", 5009, default=True)
-        self.osc_server.bind(b"/alpha_theta_ratio", self.update_alpha_theta_ratio)
-        self.osc_server.bind(b"/lziv_complexity", self.update_lziv_complexity)
+        self.osc_server.bind(b"/goofi/theta_alpha", self.update_alpha_theta_ratio)
+        self.osc_server.bind(b"/goofi/lziv", self.update_lziv_complexity)
         self.osc_server.bind(b"/duration", self.update_duration)  # New OSC binding for duration
         self.osc_client = OSCClient("127.0.0.1", 5010)  # OSC client to send messages to Goofi
 
@@ -81,34 +81,59 @@ class DreamIncubator(BaseModalityOn):
         self.duration_label = QLabel("Duration: 00:00")
         layout.addWidget(self.duration_label)
 
-        # Audio File Selection and Recording
-        audio_layout = QHBoxLayout()
-        self.select_audio_btn = QPushButton("Select Audio File")
-        self.select_audio_btn.clicked.connect(self.select_audio_file)
-        audio_layout.addWidget(self.select_audio_btn)
+        # Incubation Audio Selection and Recording
+        incubation_audio_row_layout = QHBoxLayout()
+        incubation_audio_row_layout.addWidget(QLabel("Incubation Audio:"))
+        self.select_incubation_audio_btn = QPushButton("Select File")
+        self.select_incubation_audio_btn.clicked.connect(self.select_incubation_audio_file)
+        incubation_audio_row_layout.addWidget(self.select_incubation_audio_btn)
 
         self.record_audio_btn = QPushButton("Start Recording")
         self.record_audio_btn.clicked.connect(self.toggle_audio_recording)
-        audio_layout.addWidget(self.record_audio_btn)
+        incubation_audio_row_layout.addWidget(self.record_audio_btn)
 
-        layout.addLayout(audio_layout)
+        self.current_incubation_audio_label = QLabel("Current: None")
+        incubation_audio_row_layout.addWidget(self.current_incubation_audio_label)
+        incubation_audio_row_layout.addStretch(1)
+        layout.addLayout(incubation_audio_row_layout)
 
-        self.current_audio_label = QLabel("Current Audio: None")
-        layout.addWidget(self.current_audio_label)
+        # Wake Up Audio Selection
+        wake_up_audio_row_layout = QHBoxLayout()
+        wake_up_audio_row_layout.addWidget(QLabel("Wake Up Audio:"))
+        self.select_wake_up_audio_btn = QPushButton("Select File")
+        self.select_wake_up_audio_btn.clicked.connect(self.select_wake_up_audio_file)
+        wake_up_audio_row_layout.addWidget(self.select_wake_up_audio_btn)
+
+        self.current_wake_up_audio_label = QLabel("Current: None")
+        wake_up_audio_row_layout.addWidget(self.current_wake_up_audio_label)
+        wake_up_audio_row_layout.addStretch(1)
+        layout.addLayout(wake_up_audio_row_layout)
 
         # LSL Stream Selector
         row = QHBoxLayout()
+        row.addWidget(QLabel("LSL Stream:"))
         self.device_dropdown = QComboBox()
         self.device_dropdown.setFixedWidth(150)
         self.device_dropdown.currentTextChanged.connect(self.send_selected_stream)
 
-        row.addWidget(QLabel("Stream:"))
         row.addWidget(self.device_dropdown)
-        layout.addLayout(row)
-
         self.refresh_btn = QPushButton("🔄 Refresh Streams")
         self.refresh_btn.clicked.connect(self.refresh_streams)
-        layout.addWidget(self.refresh_btn)
+        row.addWidget(self.refresh_btn)
+        layout.addLayout(row)
+
+        # Audio Output Device Selector
+        audio_out_row = QHBoxLayout()
+        audio_out_row.addWidget(QLabel("Audio Output Device:"))
+        self.audio_output_device_dropdown = QComboBox()
+        self.audio_output_device_dropdown.setFixedWidth(250)
+        self.audio_output_device_dropdown.currentTextChanged.connect(self.send_audio_output_device)
+        audio_out_row.addWidget(self.audio_output_device_dropdown)
+
+        self.refresh_audio_out_btn = QPushButton("🔄 Refresh Devices")
+        self.refresh_audio_out_btn.clicked.connect(self.refresh_audio_output_devices)
+        audio_out_row.addWidget(self.refresh_audio_out_btn)
+        layout.addLayout(audio_out_row)
 
         layout.addStretch(1)
         self.setLayout(layout)
@@ -149,23 +174,28 @@ class DreamIncubator(BaseModalityOn):
         minutes, seconds = divmod(int(value), 60)
         self.duration_label.setText(f"Duration: {minutes:02d}:{seconds:02d}")
 
-    def select_audio_file(self):
+    def select_incubation_audio_file(self):
         file_dialog = QFileDialog()
-        file_path, _ = file_dialog.getOpenFileName(self, "Select Audio File", "", "Audio Files (*.wav *.flac *.ogg)")
+        file_path, _ = file_dialog.getOpenFileName(self, "Select Incubation Audio File", "", "Audio Files (*.wav *.flac *.ogg)")
         if file_path:
-            self.current_audio_label.setText(f"Current Audio: {Path(file_path).name}")
-            self.send_audio_path_to_goofi(file_path)
+            self.current_incubation_audio_label.setText(f"Current: {Path(file_path).name}")
+            self.send_audio_path_to_goofi(file_path, "incubation")
+
+    def select_wake_up_audio_file(self):
+        file_dialog = QFileDialog()
+        file_path, _ = file_dialog.getOpenFileName(self, "Select Wake Up Audio File", "", "Audio Files (*.wav *.flac *.ogg)")
+        if file_path:
+            self.current_wake_up_audio_label.setText(f"Current: {Path(file_path).name}")
+            self.send_audio_path_to_goofi(file_path, "wakeup")
 
     def toggle_audio_recording(self):
         if not self.is_recording_audio:
             self.audio_frames = []
-            self.audio_stream = sd.InputStream(
-                samplerate=self.audio_samplerate, channels=self.audio_channels, callback=self.audio_callback
-            )
+            self.audio_stream = sd.InputStream(samplerate=self.audio_samplerate, channels=self.audio_channels, callback=self.audio_callback)
             self.audio_stream.start()
             self.is_recording_audio = True
             self.record_audio_btn.setText("Stop Recording")
-            self.current_audio_label.setText("Current Audio: Recording...")
+            self.current_incubation_audio_label.setText("Current: Recording...")
         else:
             self.audio_stream.stop()
             self.audio_stream.close()
@@ -179,14 +209,17 @@ class DreamIncubator(BaseModalityOn):
             file_name = f"recorded_audio_{timestamp}.wav"
             self.recorded_audio_path = str(output_dir / file_name)
             sf.write(self.recorded_audio_path, np.concatenate(self.audio_frames), self.audio_samplerate)
-            self.current_audio_label.setText(f"Current Audio: {file_name}")
-            self.send_audio_path_to_goofi(self.recorded_audio_path)
+            self.current_incubation_audio_label.setText(f"Current: {file_name}")
+            self.send_audio_path_to_goofi(self.recorded_audio_path, "incubation")
 
     def audio_callback(self, indata, frames, time, status):
         self.audio_frames.append(indata.copy())
 
-    def send_audio_path_to_goofi(self, audio_path):
-        self.osc_client.send_message(b"/audio_file_path", [audio_path.encode()])
+    def send_audio_path_to_goofi(self, audio_path, audio_type):
+        if audio_type == "incubation":
+            self.osc_client.send_message(b"/incubation_audio_file_path", [audio_path.encode()])
+        elif audio_type == "wakeup":
+            self.osc_client.send_message(b"/wakeup_audio_file_path", [audio_path.encode()])
 
     def send_selected_stream(self, stream_name):
         if stream_name and "No streams" not in stream_name:
@@ -201,6 +234,19 @@ class DreamIncubator(BaseModalityOn):
             for stream in streams:
                 label = f"{stream.source_id()}"
                 self.device_dropdown.addItem(label)
+
+    def send_audio_output_device(self, device_name):
+        if device_name and "No devices" not in device_name:
+            self.osc_client.send_message(b"/audio_out_device", [device_name.encode()])
+
+    def refresh_audio_output_devices(self):
+        self.audio_output_device_dropdown.clear()
+        devices = sd.query_devices()
+        output_devices = [d["name"] for d in devices if d["max_output_channels"] > 0]
+        if not output_devices:
+            self.audio_output_device_dropdown.addItem("No devices available")
+        else:
+            self.audio_output_device_dropdown.addItems(output_devices)
 
     def start(self):
         # This method is called when the main system starts
