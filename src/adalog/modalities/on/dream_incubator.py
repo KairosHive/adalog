@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 from pathlib import Path
-from threading import Thread
+from threading import Thread, Timer
 
 import numpy as np
 import sounddevice as sd
@@ -10,19 +10,20 @@ from goofi.manager import Manager
 from oscpy.client import OSCClient
 from oscpy.server import OSCThreadServer
 from pylsl import resolve_streams
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import (
     QComboBox,
     QFileDialog,
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QSpinBox,
     QVBoxLayout,
     QWidget,
 )
 
 from adalog.base_modality import BaseModalityOn
-from adalog.utils import get_asset_path
+from adalog.utils import get_asset_path, play_audio_file
 
 
 class DreamIncubator(BaseModalityOn):
@@ -34,7 +35,8 @@ class DreamIncubator(BaseModalityOn):
         self.osc_server.listen("127.0.0.1", 5009, default=True)
         self.osc_server.bind(b"/goofi/theta_alpha", self.update_alpha_theta_ratio)
         self.osc_server.bind(b"/goofi/lziv", self.update_lziv_complexity)
-        self.osc_server.bind(b"/duration", self.update_duration)  # New OSC binding for duration
+        self.osc_server.bind(b"/goofi/incubation_triggered", self.handle_incubation_triggered)
+        self.osc_server.bind(b"/goofi/baseline_done", self.handle_baseline_done)
         self.osc_client = OSCClient("127.0.0.1", 5010)  # OSC client to send messages to Goofi
 
         self.is_recording_audio = False
@@ -43,6 +45,10 @@ class DreamIncubator(BaseModalityOn):
         self.audio_channels = 1  # Default channels
         self.audio_stream = None
         self.recorded_audio_path = None
+        self.wakeup_audio_path = None  # To store the selected wakeup audio file path
+        self.wakeup_timer = QTimer()
+        self.duration_timer = None
+        self.start_time = None
 
         # Start Goofi patch immediately in a separate thread
         patch_path = Path(__file__).parent / "dream_incubator.gfi"
@@ -109,6 +115,17 @@ class DreamIncubator(BaseModalityOn):
         wake_up_audio_row_layout.addStretch(1)
         layout.addLayout(wake_up_audio_row_layout)
 
+        # Wakeup Audio Delay
+        wakeup_delay_row_layout = QHBoxLayout()
+        wakeup_delay_row_layout.addWidget(QLabel("Wakeup Audio Delay (minutes):"))
+        self.wakeup_delay_spinbox = QSpinBox()
+        self.wakeup_delay_spinbox.setRange(1, 120)  # 1 to 120 minutes
+        self.wakeup_delay_spinbox.setValue(10)  # Default to 10 minutes
+        self.wakeup_delay_spinbox.valueChanged.connect(self.update_wakeup_delay)
+        wakeup_delay_row_layout.addWidget(self.wakeup_delay_spinbox)
+        wakeup_delay_row_layout.addStretch(1)
+        layout.addLayout(wakeup_delay_row_layout)
+
         # LSL Stream Selector
         row = QHBoxLayout()
         row.addWidget(QLabel("LSL Stream:"))
@@ -146,8 +163,20 @@ class DreamIncubator(BaseModalityOn):
         self.reset_button.setEnabled(True)
         self.alpha_theta_label.setText("Alpha/Theta Ratio: Running...")
         self.lziv_complexity_label.setText("LZiv Complexity: Running...")
-        self.duration_label.setText("Duration: Running...")
+        self.duration_label.setText("Accumulating baseline EEG")
         print("Sent OSC message to start incubation.")
+
+    def play_wakeup_audio(self):
+        print("Playing wakeup audio.")
+        audio_to_play = self.wakeup_audio_path
+        if not audio_to_play:
+            audio_to_play = get_asset_path("default_wakeup_audio.wav")  # Assuming a default audio file
+            print(f"No wakeup audio selected, using default: {audio_to_play}")
+
+        if audio_to_play and Path(audio_to_play).exists():
+            play_audio_file(audio_to_play)
+        else:
+            print(f"Error: Wakeup audio file not found at {audio_to_play}")
 
     def reset_dream_incubation(self):
         self.osc_client.send_message(b"/reset_incubation", [1])
@@ -156,6 +185,11 @@ class DreamIncubator(BaseModalityOn):
         self.alpha_theta_label.setText("Alpha/Theta Ratio: N/A")
         self.lziv_complexity_label.setText("LZiv Complexity: N/A")
         self.duration_label.setText("Duration: 00:00")
+        if self.duration_timer is not None:
+            self.duration_timer.cancel()
+            self.duration_timer = None
+        self.start_time = None
+        self.wakeup_timer.stop()  # Stop the timer on reset
         print("Sent OSC message to reset incubation.")
 
     def update_alpha_theta_ratio(self, value):
@@ -168,15 +202,20 @@ class DreamIncubator(BaseModalityOn):
             value = float(value.decode())
         self.lziv_complexity_label.setText(f"LZiv Complexity: {value:.2f}")
 
-    def update_duration(self, value):
-        if isinstance(value, (bytes, bytearray)):
-            value = float(value.decode())
-        minutes, seconds = divmod(int(value), 60)
-        self.duration_label.setText(f"Duration: {minutes:02d}:{seconds:02d}")
+    def update_duration_display(self):
+        if self.start_time:
+            elapsed_time = datetime.now() - self.start_time
+            minutes, seconds = divmod(int(elapsed_time.total_seconds()), 60)
+            self.duration_label.setText(f"Duration: {minutes:02d}:{seconds:02d}")
+
+            self.duration_timer = Timer(1, self.update_duration_display)
+            self.duration_timer.start()
 
     def select_incubation_audio_file(self):
         file_dialog = QFileDialog()
-        file_path, _ = file_dialog.getOpenFileName(self, "Select Incubation Audio File", "", "Audio Files (*.wav *.flac *.ogg)")
+        file_path, _ = file_dialog.getOpenFileName(
+            self, "Select Incubation Audio File", "", "Audio Files (*.wav *.flac *.ogg)"
+        )
         if file_path:
             self.current_incubation_audio_label.setText(f"Current: {Path(file_path).name}")
             self.send_audio_path_to_goofi(file_path, "incubation")
@@ -186,12 +225,28 @@ class DreamIncubator(BaseModalityOn):
         file_path, _ = file_dialog.getOpenFileName(self, "Select Wake Up Audio File", "", "Audio Files (*.wav *.flac *.ogg)")
         if file_path:
             self.current_wake_up_audio_label.setText(f"Current: {Path(file_path).name}")
+            self.wakeup_audio_path = file_path
             self.send_audio_path_to_goofi(file_path, "wakeup")
+
+    def handle_incubation_triggered(self, value):
+        if value == 1:
+            print("Incubation triggered. Starting wakeup timer.")
+            delay_ms = self.wakeup_delay_spinbox.value() * 60 * 1000  # Convert minutes to milliseconds
+            self.wakeup_timer.singleShot(delay_ms, self.play_wakeup_audio)
+
+    def handle_baseline_done(self, value):
+        if value == 1:
+            print("Baseline done. Starting duration timer.")
+            self.start_time = datetime.now()
+            self.duration_timer = Timer(1, self.update_duration_display)
+            self.duration_timer.start()
 
     def toggle_audio_recording(self):
         if not self.is_recording_audio:
             self.audio_frames = []
-            self.audio_stream = sd.InputStream(samplerate=self.audio_samplerate, channels=self.audio_channels, callback=self.audio_callback)
+            self.audio_stream = sd.InputStream(
+                samplerate=self.audio_samplerate, channels=self.audio_channels, callback=self.audio_callback
+            )
             self.audio_stream.start()
             self.is_recording_audio = True
             self.record_audio_btn.setText("Stop Recording")
@@ -220,6 +275,10 @@ class DreamIncubator(BaseModalityOn):
             self.osc_client.send_message(b"/incubation_audio_file_path", [audio_path.encode()])
         elif audio_type == "wakeup":
             self.osc_client.send_message(b"/wakeup_audio_file_path", [audio_path.encode()])
+
+    def update_wakeup_delay(self, value):
+        self.wakeup_delay_minutes = value
+        print(f"Wakeup audio delay set to {self.wakeup_delay_minutes} minutes.")
 
     def send_selected_stream(self, stream_name):
         if stream_name and "No streams" not in stream_name:

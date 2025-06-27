@@ -27,9 +27,13 @@ links:
   node_out: dreaminceptor0
   slot_in: val
   slot_out: trigger
-- node_in: arrayawait0
+- node_in: threshold0
   node_out: dreaminceptor0
-  slot_in: trigger
+  slot_in: data
+  slot_out: trigger
+- node_in: threshold1
+  node_out: dreaminceptor0
+  slot_in: data
   slot_out: trigger
 - node_in: buffer1
   node_out: dreaminceptor0
@@ -123,14 +127,26 @@ links:
   node_out: tableselectstring2
   slot_in: device
   slot_out: output_string
+- node_in: extendedtable1
+  node_out: threshold0
+  slot_in: array_input3
+  slot_out: thresholded
+- node_in: arrayawait0
+  node_out: threshold1
+  slot_in: trigger
+  slot_out: thresholded
+- node_in: extendedtable1
+  node_out: threshold1
+  slot_in: array_input4
+  slot_out: thresholded
 nodes:
   arrayawait0:
     _type: ArrayAwait
     category: misc
     gui_kwargs:
       pos:
-      - 1384
-      - 345
+      - 1649
+      - 348
       viewers:
         out:
           collapsed: false
@@ -150,8 +166,8 @@ nodes:
     category: outputs
     gui_kwargs:
       pos:
-      - 1591
-      - 347
+      - 1856
+      - 350
       viewers:
         finished:
           collapsed: false
@@ -404,8 +420,8 @@ nodes:
     category: inputs
     gui_kwargs:
       pos:
-      - 1664
-      - -140
+      - 1859
+      - -82
       viewers:
         table:
           collapsed: false
@@ -422,8 +438,8 @@ nodes:
         param1: theta_alpha
         param10: value10
         param2: lziv
-        param3: value3
-        param4: value4
+        param3: baseline_done
+        param4: incubation_triggered
         param5: value5
         param6: value6
         param7: value7
@@ -515,8 +531,8 @@ nodes:
     category: outputs
     gui_kwargs:
       pos:
-      - 1866
-      - 120
+      - 2061
+      - 178
       viewers: {}
     params:
       common:
@@ -528,6 +544,7 @@ nodes:
         bundle: false
         port: 5009
         prefix: /goofi
+        require_change: true
   reduce0:
     _type: Reduce
     category: array
@@ -723,6 +740,62 @@ nodes:
         max_frequency: 30.0
       selection:
         key: /audio_out_device
+  threshold0:
+    _type: Threshold
+    category: signal
+    gui_kwargs:
+      pos:
+      - 1405
+      - 24
+      viewers:
+        thresholded:
+          collapsed: false
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+    params:
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+      threshold:
+        false_value: 0.0
+        min_delay: 0.0
+        mode: <
+        nan_reset: false
+        require_pass: false
+        threshold: 0.5
+        trigger_on_false: false
+        true_value: 1.0
+  threshold1:
+    _type: Threshold
+    category: signal
+    gui_kwargs:
+      pos:
+      - 1384
+      - 347
+      viewers:
+        thresholded:
+          collapsed: false
+          height: 100
+          log_scale_x: false
+          log_scale_y: false
+          viewer_idx: 0
+          width: 175
+    params:
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+      threshold:
+        false_value: 0.0
+        min_delay: 0.0
+        mode: '>'
+        nan_reset: false
+        require_pass: false
+        threshold: 0.5
+        trigger_on_false: false
+        true_value: 1.0
   writecsv0:
     _type: WriteCsv
     category: outputs
