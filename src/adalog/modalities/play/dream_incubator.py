@@ -22,11 +22,11 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from adalog.base_modality import BaseModalityOn
+from adalog.base_modality import BaseModalityPlay
 from adalog.utils import get_asset_path, play_audio_file
 
 
-class DreamIncubator(BaseModalityOn):
+class DreamIncubator(BaseModalityPlay):
     def __init__(self):
         super().__init__()
         self.goofi_thread = None

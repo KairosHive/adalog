@@ -11,10 +11,10 @@ import soundfile as sf
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QProgressBar, QVBoxLayout
 
-from adalog.base_modality import BaseModalityRec
+from adalog.base_modality import BaseModalitySense
 
 
-class Audio(BaseModalityRec):
+class Audio(BaseModalitySense):
     """
     Live level meter (always) + file writer (only while a session is running).
     The meter is refreshed by a QTimer (30 FPS) to avoid Qt-queue flooding.

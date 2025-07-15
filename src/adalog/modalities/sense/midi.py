@@ -7,7 +7,7 @@ from mido import MetaMessage, MidiFile, MidiTrack, bpm2tempo, second2tick
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
 
-from adalog.base_modality import BaseModalityRec
+from adalog.base_modality import BaseModalitySense
 
 # ---------------------------------------------------------------------------
 #  MIDI messages that cannot be stored in a Standard MIDI File (SMF v0/1)
@@ -16,7 +16,7 @@ from adalog.base_modality import BaseModalityRec
 REALTIME_TYPES = {"clock", "start", "continue", "stop", "active_sensing", "reset", "timecode"}
 
 
-class Midi(BaseModalityRec):
+class Midi(BaseModalitySense):
     """Adalog panel that records incoming MIDI data to a *.mid* file."""
 
     # emitted when a new event is captured so the GUI can update safely

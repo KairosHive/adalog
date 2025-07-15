@@ -1,11 +1,11 @@
 """
-adalog_off.py ─ Offline explorer for Adalog datasets
+adalog_engine.py ─ Offline explorer for Adalog datasets
 ────────────────────────────────────────────────────
 • Always opens with one Inspector dock (stats / overlap matrix).
 • Lets you add any extra *offline* panels living in
-  adalog/modalities/off/*.py   (class name = CamelCase of the filename).
+  adalog/modalities/engine/*.py   (class name = CamelCase of the filename).
 Run:
-    python adalog_off.py --sessions-dir ./sessions
+    python adalog_engine.py --sessions-dir ./sessions
 """
 
 from __future__ import annotations
@@ -56,18 +56,18 @@ class MainWindow(QMainWindow):
     def __init__(self, sessions_root: Path):
         super().__init__()
         self.sessions_root = sessions_root
-        self.setWindowTitle("Adalog – Offline Explorer")
+        self.setWindowTitle("Adalog – Engine Explorer")
         self.resize(1200, 720)
 
         # Discover all modalities (including Inspector)
-        self.off_modalities: Dict[str, Type[QWidget]] = self._discover_off_modalities()
+        self.engine_modalities: Dict[str, Type[QWidget]] = self._discover_engine_modalities()
 
         # Top bar UI
         bar = QWidget()
         lay = QHBoxLayout(bar)
         lay.setContentsMargins(6, 4, 6, 4)
         self.combo = QComboBox()
-        self.combo.addItems(sorted(self.off_modalities.keys()))
+        self.combo.addItems(sorted(self.engine_modalities.keys()))
         add_btn = QPushButton("Add panel", clicked=self._spawn_selected)
         lay.addWidget(QLabel("Panel:"))
         lay.addWidget(self.combo)
@@ -77,29 +77,29 @@ class MainWindow(QMainWindow):
 
         # Preload Inspector after a delay
         def _add_inspector() -> None:
-            cls = self.off_modalities.get("Inspector")
+            cls = self.engine_modalities.get("Inspector")
             if cls:
                 self._add_dock(cls(), "Inspector")
 
         QTimer.singleShot(150, _add_inspector)
 
 
-    def _discover_off_modalities(self) -> Dict[str, Type[QWidget]]:
+    def _discover_engine_modalities(self) -> Dict[str, Type[QWidget]]:
         """
-        Import every .py in adalog/modalities/off/ and return
+        Import every .py in adalog/modalities/engine/ and return
         {ClassName: class}, where ClassName is CamelCase of filename.
         """
         import adalog.modalities  # fix here
         modalities_dir = Path(adalog.modalities.__file__).parent
-        off_dir = modalities_dir / "off"
+        engine_dir = modalities_dir / "engine"
 
         found: Dict[str, Type[QWidget]] = {}
         sys.path.insert(0, str(modalities_dir.parent))  # ensure adalog package root is importable
 
-        for py in off_dir.glob("*.py"):
+        for py in engine_dir.glob("*.py"):
             if py.stem == "__init__":
                 continue
-            mod_name = f"adalog.modalities.off.{py.stem}"
+            mod_name = f"adalog.modalities.engine.{py.stem}"
             try:
                 module = importlib.import_module(mod_name)
                 class_name = "".join(part.title() for part in py.stem.split("_"))
@@ -107,13 +107,13 @@ class MainWindow(QMainWindow):
                 if cls:
                     found[class_name] = cls
             except Exception as e:
-                print(f"[off] failed to load {mod_name}: {e}", file=sys.stderr)
+                print(f"[engine] failed to load {mod_name}: {e}", file=sys.stderr)
 
         return found
 
     def _spawn_selected(self) -> None:
         name = self.combo.currentText()
-        cls = self.off_modalities.get(name)
+        cls = self.engine_modalities.get(name)
         if cls:
             self._add_dock(cls(), name)
 

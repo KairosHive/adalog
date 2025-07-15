@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QProgressBar
 from PyQt6.QtCore import Qt, QTimer
-from adalog.base_modality import BaseModalityRec
+from adalog.base_modality import BaseModalitySense
 from oscpy.client import OSCClient
 from oscpy.server import OSCThreadServer
 from threading import Thread, Timer
@@ -8,7 +8,7 @@ from goofi.manager import Manager
 from pathlib import Path
 import os
 
-class Ecg(BaseModalityRec):
+class Ecg(BaseModalitySense):
     def __init__(self):
         super().__init__()
         self.recording = False

@@ -4,7 +4,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QWidget
 
 
-class BaseModalityRec(QWidget):
+class BaseModalitySense(QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # ensure the QSS background rules are honoured
@@ -23,7 +23,7 @@ class BaseModalityRec(QWidget):
         pass
 
 
-class BaseModalityOn(QWidget):
+class BaseModalityPlay(QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # ensure the QSS background rules are honoured
@@ -57,7 +57,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication, QWidget
 
 
-class BaseModalityOff(QWidget):
+class BaseModalityEngine(QWidget):
     """
     Derive your offline panels from this class.
 

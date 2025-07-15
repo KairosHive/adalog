@@ -32,10 +32,10 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.session_dir = session_dir
 
-        self.setWindowTitle("Adalog Main Interface")
+        self.setWindowTitle("Adalog Sense Interface")
         self.setGeometry(100, 100, 800, 600)
 
-        self.modalities_path = Path("modalities/rec")
+        self.modalities_path = Path("modalities/sense")
         self.available_modalities = self.load_modalities()
         self.dock_widgets: list[object] = []
         self.session_running = False
@@ -282,16 +282,16 @@ class MainWindow(QMainWindow):
             self.save_tags_metadata()  # ← save on remove
 
     def load_modalities(self):
-        import adalog.modalities.rec  # Import the modalities package
+        import adalog.modalities.sense  # Import the modalities package
 
-        modalities_dir = Path(adalog.modalities.rec.__file__).parent
+        modalities_dir = Path(adalog.modalities.sense.__file__).parent
         modalities = {}
 
         for file in modalities_dir.glob("*.py"):
             if file.stem == "__init__":
                 continue
 
-            module_name = f"adalog.modalities.rec.{file.stem}"
+            module_name = f"adalog.modalities.sense.{file.stem}"
             try:
                 module = importlib.import_module(module_name)
                 class_name = "".join([part.capitalize() for part in file.stem.split("_")])
@@ -554,7 +554,7 @@ def set_theme(app: QApplication):
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description="adalog recording interface")
+    parser = argparse.ArgumentParser(description="adalog sense interface")
     parser.add_argument("--session-dir", type=str, default="sessions", help="Directory to save session data")
     args = parser.parse_args()
 

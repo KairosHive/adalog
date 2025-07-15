@@ -39,7 +39,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 
-from adalog.base_modality import BaseModalityRec
+from adalog.base_modality import BaseModalitySense
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -102,7 +102,7 @@ class DrawingCanvas(QLabel):
 # ──────────────────────────────────────────────────────────────────────────────
 # Panel class
 # ──────────────────────────────────────────────────────────────────────────────
-class Drawing(BaseModalityRec):
+class Drawing(BaseModalitySense):
     """Dockable Drawing panel for Adalog."""
 
     def __init__(self):

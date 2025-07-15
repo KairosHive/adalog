@@ -6,7 +6,7 @@ import pandas as pd
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QTextEdit, QVBoxLayout
 
-from adalog.base_modality import BaseModalityRec
+from adalog.base_modality import BaseModalitySense
 
 
 class SpaceTextEdit(QTextEdit):
@@ -32,7 +32,7 @@ class SpaceTextEdit(QTextEdit):
             self.wordEnded.emit()
 
 
-class Text(BaseModalityRec):
+class Text(BaseModalitySense):
     def __init__(self):
         super().__init__()
         self.recording = False

@@ -25,7 +25,7 @@ from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QColor, QFont, QPainter, QPen
 from PyQt6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
-from adalog.base_modality import BaseModalityRec
+from adalog.base_modality import BaseModalitySense
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -131,7 +131,7 @@ R_TEMP = RangeDef(0, 500_000, 2e5, 2.5e5)
 # ════════════════════════════════════════════════════════════════════
 #  Main panel
 # ════════════════════════════════════════════════════════════════════
-class Meteo(BaseModalityRec, QWidget):
+class Meteo(BaseModalitySense, QWidget):
     """Solar-wind & geomagnetic-activity panel with gauges."""
 
     _POLL_MS = 10_000  # 10 s

@@ -30,10 +30,10 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Adalog Online Interface")
+        self.setWindowTitle("Adalog Play Interface")
         self.setGeometry(100, 100, 800, 600)
 
-        self.modalities_path = Path("modalities/on")
+        self.modalities_path = Path("modalities/play")
         self.available_modalities = self.load_modalities()
         self.dock_widgets: list[object] = []
         self.system_running = False
@@ -146,16 +146,16 @@ class MainWindow(QMainWindow):
             self.chrono_label.setText(f"{minutes:02d}:{seconds:02d}")
 
     def load_modalities(self):
-        import adalog.modalities.on  # Import the modalities package
+        import adalog.modalities.play  # Import the modalities package
 
-        modalities_dir = Path(adalog.modalities.on.__file__).parent
+        modalities_dir = Path(adalog.modalities.play.__file__).parent
         modalities = {}
 
         for file in modalities_dir.glob("*.py"):
             if file.stem == "__init__":
                 continue
 
-            module_name = f"adalog.modalities.on.{file.stem}"
+            module_name = f"adalog.modalities.play.{file.stem}"
             try:
                 module = importlib.import_module(module_name)
                 class_name = "".join([part.capitalize() for part in file.stem.split("_")])
@@ -309,7 +309,7 @@ def set_theme(app: QApplication):
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description="adalog online interface")
+    parser = argparse.ArgumentParser(description="adalog play interface")
     args = parser.parse_args()
 
     app = QApplication(sys.argv)

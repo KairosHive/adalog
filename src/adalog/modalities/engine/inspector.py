@@ -22,7 +22,7 @@ from PyQt6.QtCore import QTimer
 from matplotlib.ticker import FuncFormatter
 # ➊  OFF-runtime base class (tiny)
 # ────────────────────────────────────────────────────────────
-from adalog.base_modality import BaseModalityOff
+from adalog.base_modality import BaseModalityEngine
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
@@ -193,7 +193,7 @@ class OverlapMatrixCanvas(FigureCanvas):
 
 
 
-# ➌  StatsPanel (same logic as in adalog_off, copied verbatim)
+# ➌  StatsPanel (same logic as in adalog_engine, copied verbatim)
 # ────────────────────────────────────────────────────────────
 class StatsPanel(QWidget):
     """Left column: per-modality stats — Right: overlap-time matrix."""
@@ -469,7 +469,7 @@ class StatsPanel(QWidget):
 # ────────────────────────────────────────────────────────────
 # ➍  Inspector (dockable) — what the host app loads
 # ────────────────────────────────────────────────────────────
-class Inspector(BaseModalityOff):
+class Inspector(BaseModalityEngine):
     """Dataset inspector dock (tags, modality filters, overlap matrix)."""
 
     def __init__(self):
