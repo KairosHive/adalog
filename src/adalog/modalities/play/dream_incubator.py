@@ -56,17 +56,17 @@ class DreamIncubator(BaseModalityPlay):
 
 
         # Start Goofi patch immediately in a separate thread
-        # patch_path = Path(__file__).parent / "dream_incubator.gfi"
-        # if not patch_path.exists():
-        #     print(f"Error: Goofi patch not found at {patch_path}")
-        # else:
-        #     self.goofi_thread = Thread(
-        #         target=Manager,
-        #         kwargs=dict(filepath=patch_path, headless=True),
-        #         daemon=True,
-        #     )
-        #     # self.goofi_thread.start()
-        #     print(f"Started Goofi with patch: {patch_path}")
+        patch_path = Path(__file__).parent / "dream_incubator.gfi"
+        if not patch_path.exists():
+            print(f"Error: Goofi patch not found at {patch_path}")
+        else:
+            self.goofi_thread = Thread(
+                target=Manager,
+                kwargs=dict(filepath=patch_path, headless=True),
+                daemon=True,
+            )
+            # self.goofi_thread.start()
+            print(f"Started Goofi with patch: {patch_path}")
 
         self.setup_ui()
         self.refresh_streams()  # Initial refresh
