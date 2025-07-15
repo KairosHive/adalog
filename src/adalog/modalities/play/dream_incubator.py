@@ -65,7 +65,7 @@ class DreamIncubator(BaseModalityPlay):
                 kwargs=dict(filepath=patch_path, headless=True),
                 daemon=True,
             )
-            # self.goofi_thread.start()
+            self.goofi_thread.start()
             print(f"Started Goofi with patch: {patch_path}")
 
         self.setup_ui()
