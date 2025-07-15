@@ -49,25 +49,33 @@ class DreamIncubator(BaseModalityOn):
         self.wakeup_timer = QTimer()
         self.duration_timer = None
         self.start_time = None
+        self.incubation_start_time = None
+        self.incubation_timer = None
+        self.incubation_duration_label = QLabel("Incubation Duration: 00:00")
+        
+
 
         # Start Goofi patch immediately in a separate thread
-        patch_path = Path(__file__).parent / "dream_incubator.gfi"
-        if not patch_path.exists():
-            print(f"Error: Goofi patch not found at {patch_path}")
-        else:
-            self.goofi_thread = Thread(
-                target=Manager,
-                kwargs=dict(filepath=patch_path, headless=True),
-                daemon=True,
-            )
-            # self.goofi_thread.start()
-            print(f"Started Goofi with patch: {patch_path}")
+        # patch_path = Path(__file__).parent / "dream_incubator.gfi"
+        # if not patch_path.exists():
+        #     print(f"Error: Goofi patch not found at {patch_path}")
+        # else:
+        #     self.goofi_thread = Thread(
+        #         target=Manager,
+        #         kwargs=dict(filepath=patch_path, headless=True),
+        #         daemon=True,
+        #     )
+        #     # self.goofi_thread.start()
+        #     print(f"Started Goofi with patch: {patch_path}")
 
         self.setup_ui()
         self.refresh_streams()  # Initial refresh
 
     def setup_ui(self):
         layout = QVBoxLayout()
+
+        self.incubation_trigger_count = 0
+        self.incubation_trigger_count_label = QLabel("Incubation Triggered: 0 times")
 
         self.start_button = QPushButton("Start Dream Incubation")
         self.start_button.clicked.connect(self.start_dream_incubation)
@@ -125,6 +133,8 @@ class DreamIncubator(BaseModalityOn):
         wakeup_delay_row_layout.addWidget(self.wakeup_delay_spinbox)
         wakeup_delay_row_layout.addStretch(1)
         layout.addLayout(wakeup_delay_row_layout)
+        layout.addWidget(self.incubation_duration_label)  # Add this label somewhere in your UI
+        layout.addWidget(self.incubation_trigger_count_label)
 
         # LSL Stream Selector
         row = QHBoxLayout()
@@ -151,6 +161,9 @@ class DreamIncubator(BaseModalityOn):
         self.refresh_audio_out_btn.clicked.connect(self.refresh_audio_output_devices)
         audio_out_row.addWidget(self.refresh_audio_out_btn)
         layout.addLayout(audio_out_row)
+
+        
+
 
         layout.addStretch(1)
         self.setLayout(layout)
@@ -185,12 +198,33 @@ class DreamIncubator(BaseModalityOn):
         self.alpha_theta_label.setText("Alpha/Theta Ratio: N/A")
         self.lziv_complexity_label.setText("LZiv Complexity: N/A")
         self.duration_label.setText("Duration: 00:00")
+        
+        # Reset and stop the baseline duration timer
         if self.duration_timer is not None:
             self.duration_timer.cancel()
             self.duration_timer = None
         self.start_time = None
-        self.wakeup_timer.stop()  # Stop the timer on reset
+        
+        # Stop the wakeup QTimer
+        self.wakeup_timer.stop()
+        
+        # Reset and stop the incubation duration timer
+        if hasattr(self, 'incubation_timer') and self.incubation_timer is not None:
+            self.incubation_timer.cancel()
+            self.incubation_timer = None
+        if hasattr(self, 'incubation_start_time'):
+            self.incubation_start_time = None
+        if hasattr(self, 'incubation_duration_label'):
+            self.incubation_duration_label.setText("Incubation Duration: 00:00")
+        
+        # Reset the incubation trigger counter
+        if hasattr(self, 'incubation_trigger_count'):
+            self.incubation_trigger_count = 0
+        if hasattr(self, 'incubation_trigger_count_label'):
+            self.incubation_trigger_count_label.setText("Incubation Triggered: 0 times")
+        
         print("Sent OSC message to reset incubation.")
+
 
     def update_alpha_theta_ratio(self, value):
         if isinstance(value, (bytes, bytearray)):
@@ -201,6 +235,15 @@ class DreamIncubator(BaseModalityOn):
         if isinstance(value, (bytes, bytearray)):
             value = float(value.decode())
         self.lziv_complexity_label.setText(f"LZiv Complexity: {value:.2f}")
+
+    def update_incubation_duration_display(self):
+        if self.incubation_start_time:
+            elapsed_time = datetime.now() - self.incubation_start_time
+            minutes, seconds = divmod(int(elapsed_time.total_seconds()), 60)
+            self.incubation_duration_label.setText(f"Incubation Duration: {minutes:02d}:{seconds:02d}")
+
+            self.incubation_timer = Timer(1, self.update_incubation_duration_display)
+            self.incubation_timer.start()
 
     def update_duration_display(self):
         if self.start_time:
@@ -230,9 +273,22 @@ class DreamIncubator(BaseModalityOn):
 
     def handle_incubation_triggered(self, value):
         if value == 1:
-            print("Incubation triggered. Starting wakeup timer.")
+            self.incubation_trigger_count += 1
+            self.incubation_trigger_count_label.setText(f"Incubation Triggered: {self.incubation_trigger_count} times")
+            print("Incubation triggered. Starting wakeup timer and incubation timer.")
+
+            # Start incubation timer
+            self.incubation_start_time = datetime.now()
+            if self.incubation_timer is not None:
+                self.incubation_timer.cancel()
+            self.incubation_timer = Timer(1, self.update_incubation_duration_display)
+            self.incubation_timer.start()
+
+            # Existing wakeup timer logic
             delay_ms = self.wakeup_delay_spinbox.value() * 60 * 1000  # Convert minutes to milliseconds
             self.wakeup_timer.singleShot(delay_ms, self.play_wakeup_audio)
+
+
 
     def handle_baseline_done(self, value):
         if value == 1:
@@ -272,7 +328,7 @@ class DreamIncubator(BaseModalityOn):
 
     def send_audio_path_to_goofi(self, audio_path, audio_type):
         if audio_type == "incubation":
-            self.osc_client.send_message(b"/incubation_audio_file_path", [audio_path.encode()])
+            self.osc_client.send_message(b"/audio_file_path", [audio_path.encode()])
         elif audio_type == "wakeup":
             self.osc_client.send_message(b"/wakeup_audio_file_path", [audio_path.encode()])
 
@@ -323,6 +379,12 @@ class DreamIncubator(BaseModalityOn):
         if self.is_recording_audio and self.audio_stream:
             self.audio_stream.stop()
             self.audio_stream.close()
+        if self.duration_timer is not None:
+            self.duration_timer.cancel()
+            self.duration_timer = None
+        if hasattr(self, 'incubation_timer') and self.incubation_timer is not None:
+            self.incubation_timer.cancel()
+            self.incubation_timer = None
         if self.goofi_manager:
             self.goofi_manager.stop()
         if self.goofi_thread and self.goofi_thread.is_alive():
@@ -330,11 +392,3 @@ class DreamIncubator(BaseModalityOn):
         super().closeEvent(event)
         print("DreamIncubator panel received stop signal from main system.")
 
-    def closeEvent(self, event):
-        self.osc_server.terminate_server()
-        self.osc_server.join_server()
-        if self.goofi_manager:
-            self.goofi_manager.stop()
-        if self.goofi_thread and self.goofi_thread.is_alive():
-            self.goofi_thread.join(timeout=1)
-        super().closeEvent(event)

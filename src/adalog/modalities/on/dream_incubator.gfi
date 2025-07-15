@@ -1,412 +1,277 @@
-links:
-- node_in: audioout0
-  node_out: arrayawait0
-  slot_in: data
-  slot_out: out
-- node_in: dreaminceptor0
-  node_out: buffer0
-  slot_in: data
-  slot_out: out
-- node_in: smooth0
-  node_out: buffer1
-  slot_in: data
-  slot_out: out
-- node_in: smooth1
-  node_out: buffer2
-  slot_in: data
-  slot_out: out
-- node_in: buffer3
-  node_out: correlation0
-  slot_in: val
-  slot_out: pearson
-- node_in: extendedtable0
-  node_out: dreaminceptor0
-  slot_in: array_input1
-  slot_out: trigger
-- node_in: buffer4
-  node_out: dreaminceptor0
-  slot_in: val
-  slot_out: trigger
-- node_in: threshold0
-  node_out: dreaminceptor0
-  slot_in: data
-  slot_out: trigger
-- node_in: threshold1
-  node_out: dreaminceptor0
-  slot_in: data
-  slot_out: trigger
-- node_in: buffer1
-  node_out: dreaminceptor0
-  slot_in: val
-  slot_out: z_theta_alpha
-- node_in: extendedtable0
-  node_out: dreaminceptor0
-  slot_in: array_input2
-  slot_out: z_theta_alpha
-- node_in: extendedtable1
-  node_out: dreaminceptor0
-  slot_in: array_input1
-  slot_out: z_theta_alpha
-- node_in: buffer2
-  node_out: dreaminceptor0
-  slot_in: val
-  slot_out: z_lempel_ziv
-- node_in: extendedtable1
-  node_out: dreaminceptor0
-  slot_in: array_input2
-  slot_out: z_lempel_ziv
-- node_in: writecsv0
-  node_out: extendedtable0
-  slot_in: table_input
-  slot_out: table
-- node_in: oscout0
-  node_out: extendedtable1
-  slot_in: data
-  slot_out: table
-- node_in: arrayawait0
-  node_out: loadfile0
-  slot_in: data
-  slot_out: data_output
-- node_in: select0
-  node_out: lslclient0
-  slot_in: data
-  slot_out: out
-- node_in: tableselectarray0
-  node_out: oscin0
-  slot_in: input_table
-  slot_out: message
-- node_in: tableselectarray1
-  node_out: oscin0
-  slot_in: input_table
-  slot_out: message
-- node_in: tableselectstring0
-  node_out: oscin0
-  slot_in: input_table
-  slot_out: message
-- node_in: tableselectstring1
-  node_out: oscin0
-  slot_in: input_table
-  slot_out: message
-- node_in: tableselectstring2
-  node_out: oscin0
-  slot_in: input_table
-  slot_out: message
-- node_in: buffer0
-  node_out: reduce0
-  slot_in: val
-  slot_out: out
-- node_in: reduce0
-  node_out: select0
-  slot_in: array
-  slot_out: out
-- node_in: correlation0
-  node_out: smooth0
-  slot_in: data1
-  slot_out: out
-- node_in: correlation0
-  node_out: smooth1
-  slot_in: data2
-  slot_out: out
-- node_in: dreaminceptor0
-  node_out: tableselectarray0
-  slot_in: start
-  slot_out: output_array
-- node_in: dreaminceptor0
-  node_out: tableselectarray1
-  slot_in: reset
-  slot_out: output_array
-- node_in: lslclient0
-  node_out: tableselectstring0
-  slot_in: source_name
-  slot_out: output_string
-- node_in: loadfile0
-  node_out: tableselectstring1
-  slot_in: file
-  slot_out: output_string
-- node_in: audioout0
-  node_out: tableselectstring2
-  slot_in: device
-  slot_out: output_string
-- node_in: extendedtable1
-  node_out: threshold0
-  slot_in: array_input3
-  slot_out: thresholded
-- node_in: arrayawait0
-  node_out: threshold1
-  slot_in: trigger
-  slot_out: thresholded
-- node_in: extendedtable1
-  node_out: threshold1
-  slot_in: array_input4
-  slot_out: thresholded
 nodes:
   arrayawait0:
     _type: ArrayAwait
     category: misc
-    gui_kwargs:
-      pos:
-      - 1649
-      - 348
-      viewers:
-        out:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
-          viewer_idx: 0
-          width: 175
     params:
       array_await:
         require_change: false
       common:
         autotrigger: false
         max_frequency: 30.0
+        frequency_mode: updates-per-second
+    gui_kwargs:
+      pos:
+      - 1649
+      - 348
+      viewers:
+        out:
+          viewer_idx: 0
+          width: 175
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   audioout0:
     _type: AudioOut
     category: outputs
+    params:
+      audio:
+        sampling_rate: '44100'
+        device: Microsoft Sound Mapper - Output
+        transition_samples: 100
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - 1856
       - 350
       viewers:
         finished:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
-    params:
-      audio:
-        device: 'HDA NVidia: HDMI 0 (hw:0,3)'
-        sampling_rate: '44100'
-        transition_samples: 100
-      common:
-        autotrigger: false
-        max_frequency: 30.0
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   buffer0:
     _type: Buffer
     category: signal
+    params:
+      buffer:
+        size: 20.0
+        axis: -1
+        unit: seconds
+        reset: false
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - 551
       - 206
       viewers:
         out:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
-    params:
-      buffer:
-        axis: -1
-        reset: false
-        size: 20.0
-        unit: seconds
-      common:
-        autotrigger: false
-        max_frequency: 30.0
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   buffer1:
     _type: Buffer
     category: signal
+    params:
+      buffer:
+        size: 500.0
+        axis: -1
+        unit: samples
+        reset: true
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - 1373
       - 594
       viewers:
         out:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
-    params:
-      buffer:
-        axis: -1
-        reset: true
-        size: 500.0
-        unit: samples
-      common:
-        autotrigger: false
-        max_frequency: 30.0
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   buffer2:
     _type: Buffer
     category: signal
+    params:
+      buffer:
+        size: 500.0
+        axis: -1
+        unit: samples
+        reset: true
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - 1372
       - 798
       viewers:
         out:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
-    params:
-      buffer:
-        axis: -1
-        reset: true
-        size: 500.0
-        unit: samples
-      common:
-        autotrigger: false
-        max_frequency: 30.0
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   buffer3:
     _type: Buffer
     category: signal
+    params:
+      buffer:
+        size: 500.0
+        axis: -1
+        unit: samples
+        reset: false
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - 2010
       - 760
       viewers:
         out:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
-    params:
-      buffer:
-        axis: -1
-        reset: false
-        size: 500.0
-        unit: samples
-      common:
-        autotrigger: false
-        max_frequency: 30.0
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   buffer4:
     _type: Buffer
     category: signal
+    params:
+      buffer:
+        size: 10000.0
+        axis: -1
+        unit: samples
+        reset: false
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - 1083
       - -140
       viewers:
         out:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
-    params:
-      buffer:
-        axis: -1
-        reset: false
-        size: 10000.0
-        unit: samples
-      common:
-        autotrigger: false
-        max_frequency: 30.0
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   correlation0:
     _type: Correlation
     category: analysis
+    params:
+      correlation:
+        axis: -1
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - 1800
       - 759
       viewers:
         pearson:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
         pval:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
-    params:
-      common:
-        autotrigger: false
-        max_frequency: 30.0
-      correlation:
-        axis: -1
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   dreaminceptor0:
     _type: DreamInceptor
     category: analysis
-    gui_kwargs:
-      pos:
-      - 919
-      - 107
-      viewers:
-        baseline_stats:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
-          viewer_idx: 0
-          width: 175
-        trigger:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
-          viewer_idx: 0
-          width: 175
-        z_lempel_ziv:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
-          viewer_idx: 0
-          width: 175
-        z_theta_alpha:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
-          viewer_idx: 0
-          width: 175
     params:
+      control:
+        start: false
+        reset: false
+        wait_time: 100
+        detection_method: theta_alpha
       baseline:
+        n_seconds: 30
         method: mean
-        n_seconds: 10
+      features:
+        n_features: 100
+        lz_binarization: mean
+      feature_detection:
+        threshold: 3.0
+        n_windows: 50
+      hypnodensity_detection:
+        entropy_threshold: 0.2
+        n_windows: 20
+        fmin: 1.0
+        fmax: 30.0
       common:
         autotrigger: false
         max_frequency: 30.0
-      control:
-        reset: false
-        start: false
-        wait_time: 5
-      detection:
-        n_windows: 30
-        threshold: 2.5
-      features:
-        lz_binarization: mean
-        n_features: 100
+        frequency_mode: updates-per-second
+    gui_kwargs:
+      pos:
+      - 914
+      - 99
+      viewers:
+        trigger:
+          viewer_idx: 0
+          width: 175
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
+        z_theta_alpha:
+          viewer_idx: 0
+          width: 175
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
+        z_lempel_ziv:
+          viewer_idx: 0
+          width: 175
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
+        baseline_stats:
+          viewer_idx: 0
+          width: 175
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
+        hypnodensities:
+          viewer_idx: 0
+          width: 175
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   extendedtable0:
     _type: ExtendedTable
     category: inputs
-    gui_kwargs:
-      pos:
-      - 1661
-      - -538
-      viewers:
-        table:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
-          viewer_idx: 0
-          width: 175
     params:
-      common:
-        autotrigger: false
-        max_frequency: 30.0
       table:
         param1: trigger
-        param10: value10
         param2: ta_ratio
         param3: value3
         param4: value4
@@ -415,28 +280,29 @@ nodes:
         param7: value7
         param8: value8
         param9: value9
-  extendedtable1:
-    _type: ExtendedTable
-    category: inputs
-    gui_kwargs:
-      pos:
-      - 1859
-      - -82
-      viewers:
-        table:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
-          viewer_idx: 0
-          width: 175
-    params:
+        param10: value10
       common:
         autotrigger: false
         max_frequency: 30.0
+        frequency_mode: updates-per-second
+    gui_kwargs:
+      pos:
+      - 1661
+      - -538
+      viewers:
+        table:
+          viewer_idx: 0
+          width: 175
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
+  extendedtable1:
+    _type: ExtendedTable
+    category: inputs
+    params:
       table:
         param1: theta_alpha
-        param10: value10
         param2: lziv
         param3: baseline_done
         param4: incubation_triggered
@@ -445,373 +311,611 @@ nodes:
         param7: value7
         param8: value8
         param9: value9
+        param10: value10
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
+    gui_kwargs:
+      pos:
+      - 1859
+      - -82
+      viewers:
+        table:
+          viewer_idx: 0
+          width: 175
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   loadfile0:
     _type: LoadFile
     category: inputs
+    params:
+      file:
+        filename: C:\Users\skite\.adalog_audio_recordings\recorded_audio_20250715_065245.wav
+        type: audio
+        select: ''
+      spectrum:
+        freq_multiplier: 1.0
+      embedding_csv:
+        header: 0
+        name_column: false
+        index_column: true
+      common:
+        autotrigger: false
+        max_frequency: 1.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - 915
       - 730
       viewers:
         data_output:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
         string_output:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
-    params:
-      common:
-        autotrigger: false
-        max_frequency: 1.0
-      file:
-        filename: ''
-        freq_multiplier: 1.0
-        header: 0
-        index_column: true
-        name_column: false
-        select: ''
-        type: audio
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   lslclient0:
     _type: LSLClient
     category: inputs
+    params:
+      lsl_stream:
+        source_name: nap
+        stream_name: ''
+        refresh: true
+      common:
+        autotrigger: true
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - -70
       - 208
       viewers:
         out:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
-    params:
-      common:
-        autotrigger: true
-        max_frequency: 30.0
-      lsl_stream:
-        refresh: true
-        source_name: nap
-        stream_name: ''
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   oscin0:
     _type: OSCIn
     category: inputs
+    params:
+      osc:
+        address: 0.0.0.0
+        port: 5010
+        keep_messages: false
+        clear: false
+      common:
+        autotrigger: true
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - -612
       - -35
       viewers:
         message:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
-    params:
-      common:
-        autotrigger: true
-        max_frequency: 30.0
-      osc:
-        address: 0.0.0.0
-        clear: false
-        keep_messages: false
-        port: 5010
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   oscout0:
     _type: OSCOut
     category: outputs
+    params:
+      osc:
+        address: localhost
+        port: 5009
+        prefix: /goofi
+        bundle: false
+        broadcast: false
+        require_change: true
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - 2061
       - 178
       viewers: {}
-    params:
-      common:
-        autotrigger: false
-        max_frequency: 30.0
-      osc:
-        address: localhost
-        broadcast: false
-        bundle: false
-        port: 5009
-        prefix: /goofi
-        require_change: true
   reduce0:
     _type: Reduce
     category: array
+    params:
+      reduce:
+        method: mean
+        axis: 0
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - 342
       - 206
       viewers:
         out:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
-    params:
-      common:
-        autotrigger: false
-        max_frequency: 30.0
-      reduce:
-        axis: 0
-        method: mean
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   select0:
     _type: Select
     category: array
+    params:
+      select:
+        axis: 0
+        include: '*AF7, *AF8'
+        exclude: ''
+        expand_asterisk: true
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - 139
       - 209
       viewers:
         out:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
-    params:
-      common:
-        autotrigger: false
-        max_frequency: 30.0
-      select:
-        axis: 0
-        exclude: ''
-        expand_asterisk: true
-        include: '*AF7, *AF8'
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   smooth0:
     _type: Smooth
     category: signal
+    params:
+      smooth:
+        sigma: 2.0
+        axis: -1
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - 1581
       - 593
       viewers:
         out:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
-    params:
-      common:
-        autotrigger: false
-        max_frequency: 30.0
-      smooth:
-        axis: -1
-        sigma: 2.0
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   smooth1:
     _type: Smooth
     category: signal
+    params:
+      smooth:
+        sigma: 2.0
+        axis: -1
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - 1583
       - 796
       viewers:
         out:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
-    params:
-      common:
-        autotrigger: false
-        max_frequency: 30.0
-      smooth:
-        axis: -1
-        sigma: 2.0
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   tableselectarray0:
     _type: TableSelectArray
     category: misc
+    params:
+      selection:
+        key: /start_incubation
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - -346
       - -245
       viewers:
         output_array:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
-    params:
-      common:
-        autotrigger: false
-        max_frequency: 30.0
-      selection:
-        key: /start_incubation
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   tableselectarray1:
     _type: TableSelectArray
     category: misc
+    params:
+      selection:
+        key: /reset_incubation
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - -346
       - -49
       viewers:
         output_array:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
-    params:
-      common:
-        autotrigger: false
-        max_frequency: 30.0
-      selection:
-        key: /reset_incubation
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   tableselectstring0:
     _type: TableSelectString
     category: misc
+    params:
+      selection:
+        key: /lsl_stream_selected
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - -346
       - 153
       viewers:
         output_string:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
-    params:
-      common:
-        autotrigger: false
-        max_frequency: 30.0
-      selection:
-        key: /lsl_stream_selected
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   tableselectstring1:
     _type: TableSelectString
     category: misc
+    params:
+      selection:
+        key: /audio_file_path
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - -344
       - 345
       viewers:
         output_string:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
-    params:
-      common:
-        autotrigger: false
-        max_frequency: 30.0
-      selection:
-        key: /audio_file_path
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   tableselectstring2:
     _type: TableSelectString
     category: misc
+    params:
+      selection:
+        key: /audio_out_device
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - -345
       - 543
       viewers:
         output_string:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
-    params:
-      common:
-        autotrigger: false
-        max_frequency: 30.0
-      selection:
-        key: /audio_out_device
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   threshold0:
     _type: Threshold
     category: signal
-    gui_kwargs:
-      pos:
-      - 1405
-      - 24
-      viewers:
-        thresholded:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
-          viewer_idx: 0
-          width: 175
     params:
+      threshold:
+        threshold: 0.5
+        mode: <
+        true_value: 1.0
+        false_value: 0.0
+        trigger_on_false: false
+        require_pass: false
+        min_delay: 0.0
+        nan_reset: false
       common:
         autotrigger: false
         max_frequency: 30.0
-      threshold:
-        false_value: 0.0
-        min_delay: 0.0
-        mode: <
-        nan_reset: false
-        require_pass: false
-        threshold: 0.5
-        trigger_on_false: false
-        true_value: 1.0
+        frequency_mode: updates-per-second
+    gui_kwargs:
+      pos:
+      - 1412
+      - -13
+      viewers:
+        thresholded:
+          viewer_idx: 0
+          width: 175
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   threshold1:
     _type: Threshold
     category: signal
-    gui_kwargs:
-      pos:
-      - 1384
-      - 347
-      viewers:
-        thresholded:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
-          viewer_idx: 0
-          width: 175
     params:
+      threshold:
+        threshold: 0.5
+        mode: '>'
+        true_value: 1.0
+        false_value: 0.0
+        trigger_on_false: false
+        require_pass: false
+        min_delay: 0.0
+        nan_reset: false
       common:
         autotrigger: false
         max_frequency: 30.0
-      threshold:
-        false_value: 0.0
-        min_delay: 0.0
-        mode: '>'
-        nan_reset: false
-        require_pass: false
-        threshold: 0.5
-        trigger_on_false: false
-        true_value: 1.0
+        frequency_mode: updates-per-second
+    gui_kwargs:
+      pos:
+      - 1364
+      - 218
+      viewers:
+        thresholded:
+          viewer_idx: 0
+          width: 175
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   writecsv0:
     _type: WriteCsv
     category: outputs
-    gui_kwargs:
-      pos:
-      - 1874
-      - -273
-      viewers: {}
     params:
       Write:
-        duration: 0.0
         filename: nap1.csv
         start: false
         stop: true
+        duration: 0.0
         timestamps: true
         writing_mode: default
       common:
         autotrigger: false
         max_frequency: 30.0
+        frequency_mode: updates-per-second
+    gui_kwargs:
+      pos:
+      - 1874
+      - -273
+      viewers: {}
+  math0:
+    _type: Math
+    category: array
+    params:
+      math:
+        pre_add: 0.0
+        multiply: 0.3
+        post_add: 0.0
+        round: -1
+        sqrt: false
+        squared: false
+      map:
+        input_min: 0.0
+        input_max: 1.0
+        output_min: 0.0
+        output_max: 1.0
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
+    gui_kwargs:
+      pos:
+      - 1125
+      - 728
+      viewers:
+        out:
+          viewer_idx: 0
+          width: 175
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
+  delay0:
+    _type: Delay
+    category: signal
+    params:
+      delay:
+        time: 10.0
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
+    gui_kwargs:
+      pos:
+      - 265
+      - -161
+      viewers:
+        output:
+          viewer_idx: 0
+          width: 175
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
+links:
+- node_out: arrayawait0
+  node_in: audioout0
+  slot_out: out
+  slot_in: data
+- node_out: buffer0
+  node_in: dreaminceptor0
+  slot_out: out
+  slot_in: data
+- node_out: buffer1
+  node_in: smooth0
+  slot_out: out
+  slot_in: data
+- node_out: buffer2
+  node_in: smooth1
+  slot_out: out
+  slot_in: data
+- node_out: correlation0
+  node_in: buffer3
+  slot_out: pearson
+  slot_in: val
+- node_out: dreaminceptor0
+  node_in: extendedtable0
+  slot_out: trigger
+  slot_in: array_input1
+- node_out: dreaminceptor0
+  node_in: buffer4
+  slot_out: trigger
+  slot_in: val
+- node_out: dreaminceptor0
+  node_in: threshold0
+  slot_out: trigger
+  slot_in: data
+- node_out: dreaminceptor0
+  node_in: threshold1
+  slot_out: trigger
+  slot_in: data
+- node_out: dreaminceptor0
+  node_in: buffer1
+  slot_out: z_theta_alpha
+  slot_in: val
+- node_out: dreaminceptor0
+  node_in: extendedtable0
+  slot_out: z_theta_alpha
+  slot_in: array_input2
+- node_out: dreaminceptor0
+  node_in: extendedtable1
+  slot_out: z_theta_alpha
+  slot_in: array_input1
+- node_out: dreaminceptor0
+  node_in: buffer2
+  slot_out: z_lempel_ziv
+  slot_in: val
+- node_out: dreaminceptor0
+  node_in: extendedtable1
+  slot_out: z_lempel_ziv
+  slot_in: array_input2
+- node_out: extendedtable0
+  node_in: writecsv0
+  slot_out: table
+  slot_in: table_input
+- node_out: extendedtable1
+  node_in: oscout0
+  slot_out: table
+  slot_in: data
+- node_out: loadfile0
+  node_in: math0
+  slot_out: data_output
+  slot_in: data
+- node_out: lslclient0
+  node_in: select0
+  slot_out: out
+  slot_in: data
+- node_out: oscin0
+  node_in: tableselectarray0
+  slot_out: message
+  slot_in: input_table
+- node_out: oscin0
+  node_in: tableselectarray1
+  slot_out: message
+  slot_in: input_table
+- node_out: oscin0
+  node_in: tableselectstring0
+  slot_out: message
+  slot_in: input_table
+- node_out: oscin0
+  node_in: tableselectstring1
+  slot_out: message
+  slot_in: input_table
+- node_out: oscin0
+  node_in: tableselectstring2
+  slot_out: message
+  slot_in: input_table
+- node_out: reduce0
+  node_in: buffer0
+  slot_out: out
+  slot_in: val
+- node_out: select0
+  node_in: reduce0
+  slot_out: out
+  slot_in: array
+- node_out: smooth0
+  node_in: correlation0
+  slot_out: out
+  slot_in: data1
+- node_out: smooth1
+  node_in: correlation0
+  slot_out: out
+  slot_in: data2
+- node_out: tableselectarray0
+  node_in: delay0
+  slot_out: output_array
+  slot_in: data
+- node_out: tableselectarray1
+  node_in: dreaminceptor0
+  slot_out: output_array
+  slot_in: reset
+- node_out: tableselectstring0
+  node_in: lslclient0
+  slot_out: output_string
+  slot_in: source_name
+- node_out: tableselectstring1
+  node_in: loadfile0
+  slot_out: output_string
+  slot_in: file
+- node_out: tableselectstring2
+  node_in: audioout0
+  slot_out: output_string
+  slot_in: device
+- node_out: threshold0
+  node_in: extendedtable1
+  slot_out: thresholded
+  slot_in: array_input3
+- node_out: threshold1
+  node_in: arrayawait0
+  slot_out: thresholded
+  slot_in: trigger
+- node_out: threshold1
+  node_in: extendedtable1
+  slot_out: thresholded
+  slot_in: array_input4
+- node_out: math0
+  node_in: arrayawait0
+  slot_out: out
+  slot_in: data
+- node_out: delay0
+  node_in: dreaminceptor0
+  slot_out: output
+  slot_in: start
