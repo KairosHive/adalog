@@ -31,7 +31,7 @@ pip install -r requirements.txt
 
 ---
 
-## 🚀 Running Adalog
+## 🚀 Running Adalog-Sense
 
 ### 1. Start the LSL stream
 For Muse headsets:
@@ -44,19 +44,20 @@ For other LSL-compatible devices, make sure the stream is running.
 ### 2. Start the Adalog app
 Run the main Adalog application:
 ```bash
-python adalog.py
+adalog-sense
 ```
 
 ---
 
 ## 📝 Usage
 
-1. **Enter Subject ID and Session Type**  
-   Use the text fields to set the subject ID and session type. This will define the folder structure for your session logs.
+1. **Define Your Username**  
+   Enter your username in the designated field. This will be used to identify your session and organize your logs.
 
-3. **Choose Mode**  
-   - **Text Mode:** Capture words and phrases.
-   - **Drawing Mode:** Capture freehand sketches.
+2. **Choose Your Tags**  
+   Enter one or more tags to describe your session (e.g., `AutomaticWriting`, `AutomaticDrawing`).  
+   - Tags previously used will appear automatically as you type.
+   - You can add multiple tags to categorize your session as needed.
 
 4. **Manage EEG Quality and LSL Streams**  
    - The EEG quality indicator shows the current signal quality.
@@ -74,18 +75,15 @@ Sessions are saved as follows:
 ```
 sessions/
 └── SUBJECT_ID/
-    └── SESSION_TYPE/
-        └── TIMESTAMP/
-            ├── pheno.csv
+    └── TIMESTAMP/
+        ├── tags.csv
+        └── Eeg/
+            ├── eeg_timestamps.csv
             └── drawings/
+        └── Text/
+            ├── text.csv
+            └── text_final.txt
 ```
-TODO: save the neuro.csv in the corresponding SUBJECT_ID
-
-- **pheno.csv:** Logs words and phrases with timestamps.
-- **drawings/:** Contains saved drawings as PNG files.
-- **neuro.csv:** Logs EEG data with timestamps.
-
----
 
 ## 🛠️ Contributing
 
