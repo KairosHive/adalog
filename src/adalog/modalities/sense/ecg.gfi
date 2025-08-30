@@ -12,6 +12,7 @@ nodes:
         autotrigger: false
         max_frequency: 30.0
         frequency_mode: updates-per-second
+        process_group: ''
     gui_kwargs:
       pos:
       - 514
@@ -34,6 +35,7 @@ nodes:
         autotrigger: false
         max_frequency: 30.0
         frequency_mode: updates-per-second
+        process_group: ''
     gui_kwargs:
       pos:
       - 752
@@ -128,6 +130,7 @@ nodes:
         autotrigger: false
         max_frequency: 30.0
         frequency_mode: updates-per-second
+        process_group: ''
     gui_kwargs:
       pos:
       - 640
@@ -163,10 +166,11 @@ nodes:
         autotrigger: false
         max_frequency: 30.0
         frequency_mode: updates-per-second
+        process_group: ''
     gui_kwargs:
       pos:
-      - 394
-      - 392
+      - 154
+      - 207
       viewers:
         normalized:
           viewer_idx: 0
@@ -180,14 +184,17 @@ nodes:
     category: inputs
     params:
       osc:
+        backend: oscpy
         address: 0.0.0.0
         port: 9124
+        find_usable_port_tries: 0
         keep_messages: false
         clear: false
       common:
         autotrigger: true
         max_frequency: 30.0
         frequency_mode: updates-per-second
+        process_group: ''
     gui_kwargs:
       pos:
       - -36
@@ -215,6 +222,7 @@ nodes:
         autotrigger: false
         max_frequency: 30.0
         frequency_mode: updates-per-second
+        process_group: ''
     gui_kwargs:
       pos:
       - 884
@@ -231,10 +239,11 @@ nodes:
         autotrigger: false
         max_frequency: 30.0
         frequency_mode: updates-per-second
+        process_group: ''
     gui_kwargs:
       pos:
-      - 381
-      - 180
+      - 364
+      - -82
       viewers:
         out:
           viewer_idx: 0
@@ -254,6 +263,7 @@ nodes:
         autotrigger: false
         max_frequency: 30.0
         frequency_mode: updates-per-second
+        process_group: ''
     gui_kwargs:
       pos:
       - 1269
@@ -279,6 +289,7 @@ nodes:
         autotrigger: false
         max_frequency: 30.0
         frequency_mode: updates-per-second
+        process_group: ''
     gui_kwargs:
       pos:
       - 1038
@@ -303,10 +314,11 @@ nodes:
         autotrigger: true
         max_frequency: 30.0
         frequency_mode: updates-per-second
+        process_group: ''
     gui_kwargs:
       pos:
-      - 127
-      - 205
+      - -80
+      - 201
       viewers:
         out:
           viewer_idx: 0
@@ -325,6 +337,7 @@ nodes:
         autotrigger: false
         max_frequency: 30.0
         frequency_mode: updates-per-second
+        process_group: ''
     gui_kwargs:
       pos:
       - 192
@@ -347,6 +360,7 @@ nodes:
         autotrigger: false
         max_frequency: 30.0
         frequency_mode: updates-per-second
+        process_group: ''
     gui_kwargs:
       pos:
       - 194
@@ -369,6 +383,7 @@ nodes:
         autotrigger: false
         max_frequency: 30.0
         frequency_mode: updates-per-second
+        process_group: ''
     gui_kwargs:
       pos:
       - 192
@@ -396,6 +411,7 @@ nodes:
         autotrigger: false
         max_frequency: 30.0
         frequency_mode: updates-per-second
+        process_group: ''
     gui_kwargs:
       pos:
       - 871
@@ -450,10 +466,6 @@ links:
   node_in: tableselectstring0
   slot_out: message
   slot_in: input_table
-- node_out: reduce0
-  node_in: extendedtable0
-  slot_out: out
-  slot_in: array_input1
 - node_out: reduce1
   node_in: extendedtable0
   slot_out: out
@@ -466,6 +478,10 @@ links:
   node_in: normalization0
   slot_out: out
   slot_in: data
+- node_out: serialstream0
+  node_in: extendedtable0
+  slot_out: out
+  slot_in: array_input1
 - node_out: tableselectarray0
   node_in: writecsv0
   slot_out: output_array
