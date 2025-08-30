@@ -1,211 +1,120 @@
-links:
-- node_in: cardiorespiratoryvariability0
-  node_out: buffer0
-  slot_in: data
-  slot_out: out
-- node_in: extendedtable0
-  node_out: cardiorespiratoryvariability0
-  slot_in: array_input3
-  slot_out: SDNN
-- node_in: extendedtable0
-  node_out: cardiorespiratoryvariability0
-  slot_in: array_input4
-  slot_out: SDSD
-- node_in: extendedtable0
-  node_out: cardiorespiratoryvariability0
-  slot_in: array_input5
-  slot_out: RMSSD
-- node_in: select0
-  node_out: cardiorespiratoryvariability0
-  slot_in: data
-  slot_out: Rate
-- node_in: oscout0
-  node_out: extendedtable0
-  slot_in: data
-  slot_out: table
-- node_in: writecsv0
-  node_out: extendedtable0
-  slot_in: table_input
-  slot_out: table
-- node_in: reduce0
-  node_out: normalization0
-  slot_in: array
-  slot_out: normalized
-- node_in: buffer0
-  node_out: normalization0
-  slot_in: val
-  slot_out: normalized
-- node_in: tableselectarray0
-  node_out: oscin0
-  slot_in: input_table
-  slot_out: message
-- node_in: tableselectarray1
-  node_out: oscin0
-  slot_in: input_table
-  slot_out: message
-- node_in: tableselectstring0
-  node_out: oscin0
-  slot_in: input_table
-  slot_out: message
-- node_in: extendedtable0
-  node_out: reduce0
-  slot_in: array_input1
-  slot_out: out
-- node_in: normalization0
-  node_out: serialstream0
-  slot_in: data
-  slot_out: out
-- node_in: writecsv0
-  node_out: tableselectarray0
-  slot_in: start
-  slot_out: output_array
-- node_in: writecsv0
-  node_out: tableselectarray1
-  slot_in: stop
-  slot_out: output_array
-- node_in: writecsv0
-  node_out: tableselectstring0
-  slot_in: fname
-  slot_out: output_string
-- node_in: reduce1
-  node_out: select0
-  slot_in: array
-  slot_out: out
-- node_in: extendedtable0
-  node_out: reduce1
-  slot_in: array_input2
-  slot_out: out
 nodes:
   buffer0:
     _type: Buffer
     category: signal
+    params:
+      buffer:
+        size: 20.0
+        axis: -1
+        unit: seconds
+        reset: false
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - 514
       - 656
       viewers:
         out:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
-    params:
-      buffer:
-        axis: -1
-        reset: false
-        size: 20.0
-        unit: seconds
-      common:
-        autotrigger: false
-        max_frequency: 30.0
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   cardiorespiratoryvariability0:
     _type: CardioRespiratoryVariability
     category: analysis
-    gui_kwargs:
-      pos:
-      - 752
-      - 597
-      viewers:
-        HF:
-          collapsed: true
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
-          viewer_idx: 0
-          width: 175
-        LF:
-          collapsed: true
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
-          viewer_idx: 0
-          width: 175
-        LF/HF:
-          collapsed: true
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
-          viewer_idx: 0
-          width: 175
-        Mean:
-          collapsed: true
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
-          viewer_idx: 0
-          width: 175
-        Peaks:
-          collapsed: true
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
-          viewer_idx: 0
-          width: 175
-        RMSSD:
-          collapsed: true
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
-          viewer_idx: 0
-          width: 175
-        Rate:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
-          viewer_idx: 0
-          width: 175
-        SDNN:
-          collapsed: true
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
-          viewer_idx: 0
-          width: 175
-        SDSD:
-          collapsed: true
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
-          viewer_idx: 0
-          width: 175
-        VLF:
-          collapsed: true
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
-          viewer_idx: 0
-          width: 175
     params:
       cardiorespiratory:
         input_type: ecg
       common:
         autotrigger: false
         max_frequency: 30.0
+        frequency_mode: updates-per-second
+    gui_kwargs:
+      pos:
+      - 752
+      - 597
+      viewers:
+        Mean:
+          viewer_idx: 0
+          width: 175
+          height: 100
+          collapsed: true
+          log_scale_x: false
+          log_scale_y: false
+        SDNN:
+          viewer_idx: 0
+          width: 175
+          height: 100
+          collapsed: true
+          log_scale_x: false
+          log_scale_y: false
+        SDSD:
+          viewer_idx: 0
+          width: 175
+          height: 100
+          collapsed: true
+          log_scale_x: false
+          log_scale_y: false
+        RMSSD:
+          viewer_idx: 0
+          width: 175
+          height: 100
+          collapsed: true
+          log_scale_x: false
+          log_scale_y: false
+        VLF:
+          viewer_idx: 0
+          width: 175
+          height: 100
+          collapsed: true
+          log_scale_x: false
+          log_scale_y: false
+        LF:
+          viewer_idx: 0
+          width: 175
+          height: 100
+          collapsed: true
+          log_scale_x: false
+          log_scale_y: false
+        HF:
+          viewer_idx: 0
+          width: 175
+          height: 100
+          collapsed: true
+          log_scale_x: false
+          log_scale_y: false
+        LF/HF:
+          viewer_idx: 0
+          width: 175
+          height: 100
+          collapsed: true
+          log_scale_x: false
+          log_scale_y: false
+        Peaks:
+          viewer_idx: 0
+          width: 175
+          height: 100
+          collapsed: true
+          log_scale_x: false
+          log_scale_y: false
+        Rate:
+          viewer_idx: 0
+          width: 175
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   extendedtable0:
     _type: ExtendedTable
     category: inputs
-    gui_kwargs:
-      pos:
-      - 640
-      - 24
-      viewers:
-        table:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
-          viewer_idx: 0
-          width: 175
     params:
-      common:
-        autotrigger: false
-        max_frequency: 30.0
       table:
         param1: /ecg_raw
-        param10: value10
         param2: /ecg_bpm
         param3: /sdnn
         param4: /sdsd
@@ -214,252 +123,358 @@ nodes:
         param7: value7
         param8: value8
         param9: value9
+        param10: value10
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
+    gui_kwargs:
+      pos:
+      - 640
+      - 24
+      viewers:
+        table:
+          viewer_idx: 0
+          width: 175
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   normalization0:
     _type: Normalization
     category: signal
+    params:
+      normalization:
+        method: minmax
+        buffer_size: 5096
+        reset: false
+        axis: -1
+      quantile:
+        n_quantiles: 1000
+        output_distribution: uniform
+      robust:
+        quantile_min: 25
+        quantile_max: 75
+        unit_variance: false
+      minmax:
+        feature_min: 0.0
+        feature_max: 1.0
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - 394
       - 392
       viewers:
         normalized:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
-    params:
-      common:
-        autotrigger: false
-        max_frequency: 30.0
-      minmax:
-        feature_max: 1.0
-        feature_min: 0.0
-      normalization:
-        axis: -1
-        buffer_size: 5096
-        method: minmax
-        reset: false
-      quantile:
-        n_quantiles: 1000
-        output_distribution: uniform
-      robust:
-        quantile_max: 75
-        quantile_min: 25
-        unit_variance: false
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   oscin0:
     _type: OSCIn
     category: inputs
+    params:
+      osc:
+        address: 0.0.0.0
+        port: 9124
+        keep_messages: false
+        clear: false
+      common:
+        autotrigger: true
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - -36
       - 601
       viewers:
         message:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
-    params:
-      common:
-        autotrigger: true
-        max_frequency: 30.0
-      osc:
-        address: 0.0.0.0
-        clear: false
-        keep_messages: false
-        port: 9124
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   oscout0:
     _type: OSCOut
     category: outputs
+    params:
+      osc:
+        address: localhost
+        port: 9123
+        prefix: ''
+        bundle: false
+        broadcast: false
+        require_change: false
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - 884
       - 225
       viewers: {}
-    params:
-      common:
-        autotrigger: false
-        max_frequency: 30.0
-      osc:
-        address: localhost
-        broadcast: false
-        bundle: false
-        port: 9123
-        prefix: ''
   reduce0:
     _type: Reduce
     category: array
+    params:
+      reduce:
+        method: max
+        axis: 0
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - 381
       - 180
       viewers:
         out:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
-    params:
-      common:
-        autotrigger: false
-        max_frequency: 30.0
-      reduce:
-        axis: 0
-        method: max
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   reduce1:
     _type: Reduce
     category: array
+    params:
+      reduce:
+        method: mean
+        axis: 0
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - 1269
       - 761
       viewers:
         out:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
-    params:
-      common:
-        autotrigger: false
-        max_frequency: 30.0
-      reduce:
-        axis: 0
-        method: mean
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   select0:
     _type: Select
     category: array
+    params:
+      select:
+        axis: 0
+        include: '4500:'
+        exclude: ''
+        expand_asterisk: false
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - 1038
       - 748
       viewers:
         out:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
-    params:
-      common:
-        autotrigger: false
-        max_frequency: 30.0
-      select:
-        axis: 0
-        exclude: ''
-        expand_asterisk: false
-        include: '4500:'
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   serialstream0:
     _type: SerialStream
     category: inputs
+    params:
+      serial:
+        sfreq: 256
+        port: COM5
+        protocol: ECG
+      common:
+        autotrigger: true
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - 127
       - 205
       viewers:
         out:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
-    params:
-      common:
-        autotrigger: true
-        max_frequency: 30.0
-      serial:
-        port: COM9
-        protocol: ECG
-        sfreq: 256
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   tableselectarray0:
     _type: TableSelectArray
     category: misc
+    params:
+      selection:
+        key: /recording_start
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - 192
       - 596
       viewers:
         output_array:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
-    params:
-      common:
-        autotrigger: false
-        max_frequency: 30.0
-      selection:
-        key: /recording_start
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   tableselectarray1:
     _type: TableSelectArray
     category: misc
+    params:
+      selection:
+        key: /recording_stop
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - 194
       - 792
       viewers:
         output_array:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
-    params:
-      common:
-        autotrigger: false
-        max_frequency: 30.0
-      selection:
-        key: /recording_stop
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   tableselectstring0:
     _type: TableSelectString
     category: misc
+    params:
+      selection:
+        key: /recording_path
+      common:
+        autotrigger: false
+        max_frequency: 30.0
+        frequency_mode: updates-per-second
     gui_kwargs:
       pos:
       - 192
       - 997
       viewers:
         output_string:
-          collapsed: false
-          height: 100
-          log_scale_x: false
-          log_scale_y: false
           viewer_idx: 0
           width: 175
-    params:
-      common:
-        autotrigger: false
-        max_frequency: 30.0
-      selection:
-        key: /recording_path
+          height: 100
+          collapsed: false
+          log_scale_x: false
+          log_scale_y: false
   writecsv0:
     _type: WriteCsv
     category: outputs
-    gui_kwargs:
-      pos:
-      - 871
-      - 328
-      viewers: {}
     params:
       Write:
-        duration: 0.0
         filename: ''
         start: false
         stop: false
+        duration: 0.0
         timestamps: true
         writing_mode: default
       common:
         autotrigger: false
         max_frequency: 30.0
+        frequency_mode: updates-per-second
+    gui_kwargs:
+      pos:
+      - 871
+      - 328
+      viewers: {}
+links:
+- node_out: buffer0
+  node_in: cardiorespiratoryvariability0
+  slot_out: out
+  slot_in: data
+- node_out: cardiorespiratoryvariability0
+  node_in: extendedtable0
+  slot_out: SDNN
+  slot_in: array_input3
+- node_out: cardiorespiratoryvariability0
+  node_in: extendedtable0
+  slot_out: SDSD
+  slot_in: array_input4
+- node_out: cardiorespiratoryvariability0
+  node_in: extendedtable0
+  slot_out: RMSSD
+  slot_in: array_input5
+- node_out: cardiorespiratoryvariability0
+  node_in: select0
+  slot_out: Rate
+  slot_in: data
+- node_out: extendedtable0
+  node_in: oscout0
+  slot_out: table
+  slot_in: data
+- node_out: extendedtable0
+  node_in: writecsv0
+  slot_out: table
+  slot_in: table_input
+- node_out: normalization0
+  node_in: reduce0
+  slot_out: normalized
+  slot_in: array
+- node_out: normalization0
+  node_in: buffer0
+  slot_out: normalized
+  slot_in: val
+- node_out: oscin0
+  node_in: tableselectarray0
+  slot_out: message
+  slot_in: input_table
+- node_out: oscin0
+  node_in: tableselectarray1
+  slot_out: message
+  slot_in: input_table
+- node_out: oscin0
+  node_in: tableselectstring0
+  slot_out: message
+  slot_in: input_table
+- node_out: reduce0
+  node_in: extendedtable0
+  slot_out: out
+  slot_in: array_input1
+- node_out: reduce1
+  node_in: extendedtable0
+  slot_out: out
+  slot_in: array_input2
+- node_out: select0
+  node_in: reduce1
+  slot_out: out
+  slot_in: array
+- node_out: serialstream0
+  node_in: normalization0
+  slot_out: out
+  slot_in: data
+- node_out: tableselectarray0
+  node_in: writecsv0
+  slot_out: output_array
+  slot_in: start
+- node_out: tableselectarray1
+  node_in: writecsv0
+  slot_out: output_array
+  slot_in: stop
+- node_out: tableselectstring0
+  node_in: writecsv0
+  slot_out: output_string
+  slot_in: fname
