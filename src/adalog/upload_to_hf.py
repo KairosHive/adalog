@@ -459,6 +459,7 @@ class AdalogDatasetUploader:
         repo_id: Optional[str] = None,
         private: bool = False,
         force_reupload: bool = False,
+        filter_users: Optional[list[str]] = None,
     ):
         """
         Complete pipeline: scan, create, and upload dataset incrementally.
@@ -472,11 +473,17 @@ class AdalogDatasetUploader:
             repo_id: HF repo ID
             private: Whether to make the dataset private
             force_reupload: If True, ignore cache and upload all sessions
+            filter_users: If provided, only upload sessions from these users
         """
         repo_id = repo_id or self.repo_id
         
         print("Scanning local sessions...")
         new_sessions = self.scan_sessions(skip_cached=not force_reupload)
+        
+        # Filter by users if specified
+        if filter_users:
+            new_sessions = [s for s in new_sessions if s['user'] in filter_users]
+            print(f"Filtered to {len(new_sessions)} sessions from users: {', '.join(filter_users)}")
         
         # Try to download existing dataset from HuggingFace
         existing_dataset = None

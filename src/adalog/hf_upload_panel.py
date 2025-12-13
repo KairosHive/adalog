@@ -35,55 +35,33 @@ class UploadWorker(QThread):
             # Set token in environment
             os.environ["HF_TOKEN"] = self.token
             
-            self.progress.emit("Scanning sessions...")
+            self.progress.emit("Initializing uploader...")
             uploader = AdalogDatasetUploader(
                 sessions_dir=self.sessions_dir,
-                repo_id=self.repo_id
+                repo_id=self.repo_id,
+                use_cache=True
             )
             
-            # Scan all sessions
-            all_sessions = uploader.scan_sessions()
-            
-            # Filter by selected users and sessions
-            filtered_sessions = []
-            for session in all_sessions:
-                if session['user'] in self.selected_users:
-                    if not self.selected_sessions or session['session_id'] in self.selected_sessions:
-                        # Filter modalities
-                        if self.selected_modalities:
-                            # Remove unselected modalities
-                            if 'Eeg' not in self.selected_modalities:
-                                session['eeg_file'] = None
-                            if 'Ecg' not in self.selected_modalities:
-                                session['ecg_file'] = None
-                            if 'Audio' not in self.selected_modalities:
-                                session['audio_file'] = None
-                            if 'Text' not in self.selected_modalities:
-                                session['text_csv_file'] = None
-                                session['text_final_file'] = None
-                            if 'Meteo' not in self.selected_modalities:
-                                session['meteo_file'] = None
-                            if 'Osc' not in self.selected_modalities:
-                                session['osc_csv_file'] = None
-                                session['osc_final_file'] = None
-                            if 'Drawing' not in self.selected_modalities:
-                                session['drawing_file'] = None
-                        
-                        filtered_sessions.append(session)
-            
-            if not filtered_sessions:
-                self.finished.emit(False, "No sessions match the selection")
+            # Use the proper create_and_upload which handles merging
+            if self.selected_users:
+                self.progress.emit(f"Uploading sessions for: {', '.join(self.selected_users)}")
+                
+                uploader.create_and_upload(
+                    repo_id=self.repo_id,
+                    private=False,
+                    force_reupload=False,
+                    filter_users=self.selected_users
+                )
+                
+                self.finished.emit(True, f"Successfully uploaded sessions for {', '.join(self.selected_users)}!")
+            else:
+                self.finished.emit(False, "No users selected")
                 return
             
-            self.progress.emit(f"Creating dataset with {len(filtered_sessions)} sessions...")
-            dataset = uploader.create_dataset(filtered_sessions)
-            
-            self.progress.emit("Uploading to HuggingFace...")
-            uploader.upload_dataset(dataset, repo_id=self.repo_id, private=False)
-            
-            self.finished.emit(True, f"Successfully uploaded {len(filtered_sessions)} sessions!")
-            
         except Exception as e:
+            import traceback
+            error_details = traceback.format_exc()
+            print(f"Upload error:\n{error_details}")
             self.finished.emit(False, f"Error: {str(e)}")
 
 
