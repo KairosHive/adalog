@@ -485,11 +485,21 @@ class AdalogDatasetUploader:
             try:
                 print(f"Downloading existing dataset from {repo_id}...")
                 from datasets import load_dataset
-                existing_dataset = load_dataset(repo_id, trust_remote_code=True)
+                
+                # Set the token explicitly
+                os.environ["HF_TOKEN"] = os.getenv("HF_TOKEN", "")
+                
+                existing_dataset = load_dataset(repo_id, trust_remote_code=True, use_auth_token=True)
                 existing_count = sum(len(existing_dataset[split]) for split in existing_dataset.keys())
                 print(f"✓ Found {existing_count} existing sessions online")
             except Exception as e:
-                print(f"No existing dataset found (creating new): {str(e)[:100]}")
+                error_msg = str(e)
+                print(f"⚠️  Could not download existing dataset: {error_msg[:200]}")
+                print("Creating new dataset (existing data will be replaced)")
+                if "401" in error_msg or "403" in error_msg:
+                    print("❌ Authentication failed - check your HF token has read access to the dataset")
+                elif "404" in error_msg:
+                    print("ℹ️  Dataset doesn't exist yet (this is normal for first upload)")
         
         if not new_sessions and not force_reupload:
             print("✓ No new or changed sessions to upload.")

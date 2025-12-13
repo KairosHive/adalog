@@ -317,10 +317,11 @@ class HuggingFaceUploadPanel(QWidget):
         selected_modalities = [mod for mod, cb in self.modality_checkboxes.items() if cb.isChecked()]
         
         # Confirm upload
-        msg = f"Upload {len(selected_users)} users"
+        msg = f"Upload {len(selected_users)} users ({', '.join(selected_users)})"
         if selected_modalities:
             msg += f" with {len(selected_modalities)} modalities"
         msg += f" to {repo_id}?"
+        msg += "\n\n⚠️ This will merge with existing data online (no duplicates)."
         
         reply = QMessageBox.question(
             self, "Confirm Upload", msg,
