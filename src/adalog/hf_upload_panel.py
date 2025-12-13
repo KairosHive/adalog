@@ -198,6 +198,8 @@ class HuggingFaceUploadPanel(QWidget):
         content_layout.addWidget(self.status_label)
         
         # Upload button
+        buttons_layout = QHBoxLayout()
+        
         self.upload_btn = QPushButton("Upload to HuggingFace")
         self.upload_btn.setStyleSheet("""
             QPushButton {
@@ -216,7 +218,24 @@ class HuggingFaceUploadPanel(QWidget):
             }
         """)
         self.upload_btn.clicked.connect(self.start_upload)
-        content_layout.addWidget(self.upload_btn)
+        buttons_layout.addWidget(self.upload_btn)
+        
+        self.clear_cache_btn = QPushButton("Clear Cache")
+        self.clear_cache_btn.setStyleSheet("""
+            QPushButton {
+                background: #d73a49;
+                color: white;
+                padding: 8px;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background: #cb2431;
+            }
+        """)
+        self.clear_cache_btn.clicked.connect(self.clear_cache)
+        buttons_layout.addWidget(self.clear_cache_btn)
+        
+        content_layout.addLayout(buttons_layout)
         
         main_layout.addWidget(self.content)
         
@@ -259,7 +278,19 @@ class HuggingFaceUploadPanel(QWidget):
         if not users:
             self.status_label.setText("No users found in sessions directory")
         else:
-            self.status_label.setText(f"Found {len(users)} users")
+            self.status_label.setText(f"Found {len(users)} user(s)")
+    
+    def clear_cache(self):
+        """Clear the upload cache file."""
+        cache_file = Path(".hf_upload_cache.json")
+        if cache_file.exists():
+            try:
+                cache_file.unlink()
+                self.status_label.setText("✓ Cache cleared successfully")
+            except Exception as e:
+                self.status_label.setText(f"❌ Error clearing cache: {str(e)}")
+        else:
+            self.status_label.setText("ℹ️ No cache file found")
     
     def select_all_modalities(self):
         """Select all modality checkboxes."""

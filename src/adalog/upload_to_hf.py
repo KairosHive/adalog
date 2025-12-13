@@ -12,7 +12,7 @@ from typing import Dict, List, Optional, Set
 from datetime import datetime
 
 import pandas as pd
-from datasets import Dataset, DatasetDict, Features, Value, Audio, Sequence
+from datasets import Dataset, DatasetDict, Features, Value, Audio, Sequence, concatenate_datasets
 from huggingface_hub import HfApi, login
 
 # Try to load environment variables from .env file
@@ -413,13 +413,13 @@ class AdalogDatasetUploader:
         total_sessions = sum(len(dataset[split]) for split in dataset.keys())
         print(f"Uploading dataset to {repo_id}...")
         print(f"Total: {total_sessions} sessions across {len(dataset)} users")
-        print("Note: Repository will be created automatically if it doesn't exist")
-        print(f"Organization: Each user is a separate split")
         
-        # Push to hub (creates repo if it doesn't exist)
+        # Get token and push to hub
+        token = os.getenv("HF_TOKEN", "")
         dataset.push_to_hub(
             repo_id,
             private=private,
+            token=token,
             commit_message=commit_message,
         )
         
@@ -493,20 +493,13 @@ class AdalogDatasetUploader:
                 print(f"Downloading existing dataset from {repo_id}...")
                 from datasets import load_dataset
                 
-                # Set the token explicitly
-                os.environ["HF_TOKEN"] = os.getenv("HF_TOKEN", "")
-                
-                existing_dataset = load_dataset(repo_id, trust_remote_code=True, use_auth_token=True)
+                token = os.getenv("HF_TOKEN", "")
+                existing_dataset = load_dataset(repo_id, token=token)
                 existing_count = sum(len(existing_dataset[split]) for split in existing_dataset.keys())
-                print(f"✓ Found {existing_count} existing sessions online")
+                print(f"✓ Found {existing_count} existing sessions online in splits: {list(existing_dataset.keys())}")
             except Exception as e:
-                error_msg = str(e)
-                print(f"⚠️  Could not download existing dataset: {error_msg[:200]}")
-                print("Creating new dataset (existing data will be replaced)")
-                if "401" in error_msg or "403" in error_msg:
-                    print("❌ Authentication failed - check your HF token has read access to the dataset")
-                elif "404" in error_msg:
-                    print("ℹ️  Dataset doesn't exist yet (this is normal for first upload)")
+                print(f"⚠️  Could not download existing dataset (will create new): {str(e)[:200]}")
+                existing_dataset = None
         
         if not new_sessions and not force_reupload:
             print("✓ No new or changed sessions to upload.")
@@ -519,7 +512,7 @@ class AdalogDatasetUploader:
         new_dataset = self.create_dataset(new_sessions)
         
         # Merge with existing dataset to avoid duplicates
-        if existing_dataset and not force_reupload:
+        if existing_dataset is not None and not force_reupload:
             print("Merging with existing dataset (removing duplicates)...")
             final_dataset = self._merge_datasets(existing_dataset, new_dataset)
             total = sum(len(final_dataset[split]) for split in final_dataset.keys())
