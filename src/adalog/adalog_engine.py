@@ -29,6 +29,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from adalog.hf_upload_panel import HuggingFaceUploadPanel
+
 # ────────────────────────────────────────────────────────────────
 # 1 ─ Theme helper
 # ────────────────────────────────────────────────────────────────
@@ -75,6 +77,9 @@ class MainWindow(QMainWindow):
         lay.addStretch()
         self.setMenuWidget(bar)
 
+        # Setup HuggingFace upload panel on the right
+        self._setup_hf_panel()
+
         # Preload Inspector after a delay
         def _add_inspector() -> None:
             cls = self.engine_modalities.get("Inspector")
@@ -82,6 +87,42 @@ class MainWindow(QMainWindow):
                 self._add_dock(cls(), "Inspector")
 
         QTimer.singleShot(150, _add_inspector)
+
+    def _setup_hf_panel(self) -> None:
+        """Setup the HuggingFace upload panel on the right side."""
+        import os
+        
+        # Load default repo ID from environment or config
+        default_repo_id = os.getenv("HF_REPO_ID", "AntoineBellemare/adalog-sessions")
+        
+        # Create the upload panel
+        hf_panel = HuggingFaceUploadPanel(
+            sessions_dir=str(self.sessions_root),
+            default_repo_id=default_repo_id
+        )
+        
+        # Create a dock widget for it
+        hf_dock = QDockWidget("HuggingFace", self)
+        hf_dock.setWidget(hf_panel)
+        hf_dock.setAllowedAreas(Qt.DockWidgetArea.RightDockWidgetArea | Qt.DockWidgetArea.LeftDockWidgetArea)
+        
+        # Style the dock
+        hf_dock.setStyleSheet("""
+            QDockWidget {
+                background: #2d2d2d;
+            }
+            QDockWidget::title {
+                background: #f4a261;
+                color: white;
+                font-size: 18px;
+                font-weight: bold;
+                padding-left: 6px;
+                height: 28px;
+            }
+        """)
+        
+        # Add to the right side
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, hf_dock)
 
 
     def _discover_engine_modalities(self) -> Dict[str, Type[QWidget]]:

@@ -6,3 +6,6 @@ pandas
 pylsl
 muselsl
 python-rtmidi
+huggingface_hub
+datasets
+python-dotenv

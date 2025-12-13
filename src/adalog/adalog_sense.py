@@ -169,8 +169,10 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(None)
         self.setDockNestingEnabled(True)
 
-
     def update_status_indicator(self):
+        color = "#00ff00" if self.session_running else "#ff4444"
+        self.status_indicator.setText("●")
+        self.status_indicator.setStyleSheet(f"color: {color}; font-size: 18px;")
         color = "#00ff00" if self.session_running else "#ff4444"
         self.status_indicator.setText("●")
         self.status_indicator.setStyleSheet(f"color: {color}; font-size: 18px;")
