@@ -25,8 +25,10 @@ log = logging.getLogger("adalog.sense.bridge")
 
 def _web_dir() -> Optional[Path]:
     here = Path(__file__).resolve()
-    candidates = [here.parent.parent / "web",                       # packaged bundle (sense/web)
-                  here.parents[3] / "frontend" / "build"]           # dev build
+    candidates = [
+        here.parent.parent / "web",            # packaged bundle: src/adalog/sense/web
+        Path(__file__).resolve().parents[4] / "frontend" / "build",  # dev build: <repo>/frontend/build
+    ]
     for c in candidates:
         if c.exists() and (c / "index.html").exists():
             return c
