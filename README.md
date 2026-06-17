@@ -2,101 +2,53 @@
   <img src="https://github.com/user-attachments/assets/4dcdb86c-61b9-46f9-a337-43bb1a4265c6" alt="logo" width="300">
 </p>
 
-# Neurophenomenological Data Recorder
+# adalog — multimodal data-recording platform
 
-Adalog is a Python app for recording neurophenomenological data using `goofi-pipe`. It provides an intuitive graphical interface for capturing text, drawings, and EEG signals during experimental sessions. This README covers the installation, setup, and usage of the Adalog app.
+adalog merges modalities — devices, APIs, and human input — into one **synchronized, self-describing, lossless** dataset. The framework handles the boilerplate: clock synchronization, data formatting, crash-safe saving, and (later) cross-user sync.
 
----
+This repository is undergoing a **ground-up rework** (June 2026). The full design and plan live in:
 
-## 📦 Installation
+- Spec: [`docs/superpowers/specs/2026-06-17-adalog-sense-core-design.md`](docs/superpowers/specs/2026-06-17-adalog-sense-core-design.md)
+- Plan: [`docs/superpowers/plans/2026-06-17-adalog-sense-core.md`](docs/superpowers/plans/2026-06-17-adalog-sense-core.md)
 
-### 1. Clone the repository
+## Three apps
+
+- **adalog-sense** — the recorder (the focus of the current rework). Standalone, goofi-free core; a web UI; records the launch device set (EEG/Muse, ECG, audio, drawing, text, MIDI, OSC, space-weather) into synchronized session directories.
+- **adalog-engine** — offline analysis, dataset exploration, downstream model building (future).
+- **adalog-play** — running models online for live experiences (biofeedback, dream incubation), deeply integrated with goofi (future).
+
+## The data standard
+
+A session is a directory + `manifest.json` (the single contract). Each stream is stored in its **natural format** (Arrow IPC for high-rate signals, WAV for audio, PNG + pen-trace for drawing, NDJSON for text/OSC/meteo, MIDI). One **monotonic master clock** governs alignment; every stream declares its timing mode (`per_sample` / `anchored` / `anchored_irregular` / `event`) and carries honest timing provenance.
+
+## Architecture (enforced layers)
+
+```
+adalog.core        goofi-free recording spine (clock, envelope, manifest, recorder, reader)
+adalog.schema      declarative Field/config system
+adalog.adapters    device-adapter SDK (base, supervisor, registry, templates)
+adalog.store       BlobStore/Index interface + local backend
+adalog.bridge_codec  vendored GOOF wire codec (goofi-free)
+adalog.convert     legacy v0 -> v1 session converter
+adalog.sense       standalone recorder app (bridge + devices + CLI)
+```
+
+The goofi-free boundary (`adalog.core/schema/adapters/store/convert/bridge_codec` import nothing from `goofi`/`torch`/`iceoryx2`) is enforced in CI by import-linter.
+
+## Development
+
 ```bash
-git clone https://github.com/KairosCreation/adalog.git
-cd adalog
+uv sync --extra dev               # core + test deps
+uv run pytest -q                  # tests
+uv run lint-imports --config importlinter.ini   # import-guard
 ```
 
-### 2. Create a Python environment
-Create a new virtual environment using conda:
+Device acquisition backends (LSL, serial, audio, MIDI, OSC) install via the `devices` extra:
+
 ```bash
-conda create -n adalog python=3.11
-conda activate adalog
+uv sync --extra dev --extra devices
 ```
 
-### 3. Install requirements
-Install the necessary packages:
-```bash
-pip install -r requirements.txt
-```
-
----
-
-## 🚀 Running Adalog-Sense
-
-### 1. Start the LSL stream
-For Muse headsets:
-```bash
-muselsl stream
-```
-
-For other LSL-compatible devices, make sure the stream is running.
-
-### 2. Start the Adalog app
-Run the main Adalog application:
-```bash
-adalog-sense
-```
-
----
-
-## 📝 Usage
-
-1. **Define Your Username**  
-   Enter your username in the designated field. This will be used to identify your session and organize your logs.
-
-2. **Choose Your Tags**  
-   Enter one or more tags to describe your session (e.g., `AutomaticWriting`, `AutomaticDrawing`).  
-   - Tags previously used will appear automatically as you type.
-   - You can add multiple tags to categorize your session as needed.
-
-4. **Manage EEG Quality and LSL Streams**  
-   - The EEG quality indicator shows the current signal quality.
-   - Use the dropdown menu to select an available LSL stream.
-   - Click the "🔄 Refresh Streams" button to update the list of available streams.
-
-5. **Start/Stop Recording**  
-   Use the "🟢 Start Recording" and "🔴 Stop Recording" buttons to control the recording process.
-
----
-
-## 📂 Directory Structure
-
-Sessions are saved as follows:
-```
-sessions/
-└── SUBJECT_ID/
-    └── TIMESTAMP/
-        ├── tags.csv
-        └── Eeg/
-            ├── eeg_timestamps.csv
-            └── drawings/
-        └── Text/
-            ├── text.csv
-            └── text_final.txt
-```
-
-## 🛠️ Contributing
-
-Feel free to open issues or pull requests to improve the app. Contributions are welcome!
-
----
-
-## 📄 License
+## License
 
 TODO
-
----
-
-## ❤️ Acknowledgments
-
-Thanks to the [goofi-pipe](https://github.com/dav0dea/goofi-pipe) team for providing the underlying data processing framework.
