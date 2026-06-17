@@ -38,13 +38,20 @@ The goofi-free boundary (`adalog.core/schema/adapters/store/convert/bridge_codec
 ## Running the recorder
 
 ```bash
-# build the web UI once (Node + pnpm, build-time only) and stage it into the package
-python scripts/build_frontend.py
-
 # install device backends (LSL, serial, audio, MIDI, OSC) and launch
 uv sync --extra devices
 uv run adalog-sense                 # opens http://127.0.0.1:8137 in your browser
 ```
+
+In a dev checkout the web UI is **rebuilt automatically on launch whenever its sources
+changed** (the same pattern goofi-pipe uses) — no manual `pnpm build` needed; you just need
+`pnpm install` to have been run once in `frontend/`. Knobs:
+
+- `ADALOG_NO_FRONTEND_BUILD=1` — skip the auto-rebuild (serve whatever bundle exists).
+- `ADALOG_FRONTEND_BUILD=/path/to/build` — serve a prebuilt bundle from elsewhere (also disables auto-rebuild).
+
+Wheel installs ship a prebuilt bundle and never build at runtime. To stage it into the wheel:
+`python scripts/build_frontend.py` before `uv build`.
 
 Then: **New session** → tap devices to arm them → **● Record** → **■ Stop**. Sessions land
 under `~/adalog-sessions/<user>/<session_id>/` as a `manifest.json` plus one natural-format

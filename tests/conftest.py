@@ -2,8 +2,14 @@
 from __future__ import annotations
 
 import itertools
+import os
 
 import pytest
+
+# Keep the suite hermetic: never let bridge construction shell out to pnpm.
+# (The dedicated frontend-build tests manage this var themselves; the browser
+# e2e builds the frontend explicitly before running.)
+os.environ.setdefault("ADALOG_NO_FRONTEND_BUILD", "1")
 
 
 class FakeClock:

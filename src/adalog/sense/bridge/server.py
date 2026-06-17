@@ -19,20 +19,25 @@ from ...bridge_codec import Data, encode_frame
 from ...bridge_codec.codec import ARRAY, STRING
 from ..service import RecorderService
 from .control import dispatch
+from .frontend_build import maybe_build_frontend, resolve_static_root
 
 log = logging.getLogger("adalog.sense.bridge")
 
 
 def _web_dir() -> Optional[Path]:
-    here = Path(__file__).resolve()
-    candidates = [
-        here.parent.parent / "web",            # packaged bundle: src/adalog/sense/web
-        Path(__file__).resolve().parents[4] / "frontend" / "build",  # dev build: <repo>/frontend/build
-    ]
-    for c in candidates:
-        if c.exists() and (c / "index.html").exists():
-            return c
-    return None
+    """Resolve the SPA bundle to serve, rebuilding it first if stale (dev checkout)."""
+    maybe_build_frontend()
+    return resolve_static_root()
+
+
+@web.middleware
+async def _no_cache(request, handler):
+    """Single-user local server: never let the browser hold stale JS/CSS across a
+    `pnpm build` cycle. The negligible re-fetch cost beats serving a stale bundle."""
+    resp = await handler(request)
+    if isinstance(resp, web.StreamResponse):
+        resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    return resp
 
 
 def _packet_to_data(packet) -> Data:
@@ -49,7 +54,7 @@ class SenseBridge:
         self.service = service
         self.host = host
         self.port = port
-        self.app = web.Application()
+        self.app = web.Application(middlewares=[_no_cache])
         self._control_sockets: set[web.WebSocketResponse] = set()
         self._loop: Optional[asyncio.AbstractEventLoop] = None
         self._runner: Optional[web.AppRunner] = None
