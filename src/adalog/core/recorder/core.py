@@ -33,6 +33,7 @@ class _Stream:
     last_packet: Optional[StreamPacket] = None
     files: list = field(default_factory=list)
     counts: dict = field(default_factory=dict)
+    segments: int = 1
 
 
 def _data_filename(spec: StreamSpec) -> str:
@@ -72,6 +73,11 @@ class RecordingCore:
 
     def has_stream(self, stream_id: str) -> bool:
         return stream_id in self._streams
+
+    def bump_segment(self, stream_id: str) -> None:
+        st = self._streams.get(stream_id)
+        if st is not None:
+            st.segments += 1
 
     # ---- ingest (the hot path) ----
     def ingest(self, packet: StreamPacket) -> None:
@@ -132,7 +138,7 @@ class RecordingCore:
                 derivation=(DerivationRef(source_stream=sp.derivation.source_stream,
                                           method=sp.derivation.method, window=sp.derivation.window)
                             if sp.derivation else None),
-                files=files, segments=1, status="complete",
+                files=files, segments=st.segments, status="complete",
             )
             entries.append(entry)
         return entries
