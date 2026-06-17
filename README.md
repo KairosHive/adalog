@@ -35,18 +35,40 @@ adalog.sense       standalone recorder app (bridge + devices + CLI)
 
 The goofi-free boundary (`adalog.core/schema/adapters/store/convert/bridge_codec` import nothing from `goofi`/`torch`/`iceoryx2`) is enforced in CI by import-linter.
 
+## Running the recorder
+
+```bash
+# build the web UI once (Node + pnpm, build-time only) and stage it into the package
+python scripts/build_frontend.py
+
+# install device backends (LSL, serial, audio, MIDI, OSC) and launch
+uv sync --extra devices
+uv run adalog-sense                 # opens http://127.0.0.1:8137 in your browser
+```
+
+Then: **New session** → tap devices to arm them → **● Record** → **■ Stop**. Sessions land
+under `~/adalog-sessions/<user>/<session_id>/` as a `manifest.json` plus one natural-format
+file per stream.
+
+Convert legacy sessions to the new format:
+
+```bash
+uv run adalog-convert path/to/old/<user>/<timestamp> ~/adalog-sessions --user phil
+```
+
 ## Development
 
 ```bash
-uv sync --extra dev               # core + test deps
-uv run pytest -q                  # tests
-uv run lint-imports --config importlinter.ini   # import-guard
+uv sync --extra dev                              # core + test deps
+uv run pytest -q -m "not e2e"                    # backend tests
+uv run lint-imports --config importlinter.ini    # goofi-free + layering guard
+cd frontend && pnpm install && pnpm build        # frontend
 ```
 
-Device acquisition backends (LSL, serial, audio, MIDI, OSC) install via the `devices` extra:
+Browser end-to-end test (needs a built frontend + Playwright chromium):
 
 ```bash
-uv sync --extra dev --extra devices
+uv run pytest -m e2e
 ```
 
 ## License

@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  test:
+  backend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,5 +18,21 @@ jobs:
         run: uv sync --extra dev
       - name: Import-guard (goofi-free spine + layers)
         run: uv run lint-imports --config importlinter.ini
-      - name: Tests
-        run: uv run pytest -q
+      - name: Tests (excluding browser e2e)
+        run: uv run pytest -q -m "not e2e"
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build

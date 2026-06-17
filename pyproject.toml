@@ -48,6 +48,7 @@ goofi = []
 
 [project.scripts]
 adalog-sense = "adalog.sense.cli:main"
+adalog-convert = "adalog.convert.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
