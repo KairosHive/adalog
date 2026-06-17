@@ -80,6 +80,9 @@ class SessionClock:
         self.t0_utc_ns: int = self._utc_fn()
         self.anchors: list[ClockAnchor] = [ClockAnchor(0.0, self.t0_mono_ns, self.t0_utc_ns)]
         self.suspend_events: list[SuspendEvent] = []
+        # Best-effort cross-host UTC bound (widened across a detected suspend on the
+        # fallback path; Spec 2 may refine this with NTP-grade measurement).
+        self.wall_uncertainty_s: float = 0.05
         # Drift fit in coordinates RELATIVE to t0 (preserves ns precision; absolute
         # UTC ns ~1e18 exceeds float64 mantissa):
         #   utc_ns ≈ t0_utc_ns + _utc_a + _utc_b * (mono_ns - t0_mono_ns)
