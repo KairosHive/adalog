@@ -74,6 +74,9 @@ class RecordingCore:
     def has_stream(self, stream_id: str) -> bool:
         return stream_id in self._streams
 
+    def specs(self) -> list[StreamSpec]:
+        return [st.spec for st in self._streams.values()]
+
     def bump_segment(self, stream_id: str) -> None:
         st = self._streams.get(stream_id)
         if st is not None:

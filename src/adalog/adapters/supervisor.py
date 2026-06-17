@@ -43,11 +43,15 @@ class Managed:
 
 class AdapterSupervisor:
     def __init__(self, core: RecordingCore, clock, *, on_event: Optional[Callable[[str, dict], None]] = None,
-                 on_status: Optional[Callable[[Managed], None]] = None):
+                 on_status: Optional[Callable[[Managed], None]] = None,
+                 emit_fn: Optional[Callable] = None):
         self.core = core
         self.clock = clock
         self.on_event = on_event or (lambda kind, data: None)
         self.on_status = on_status or (lambda m: None)
+        # All adapter emits route here. Defaults to core.ingest; the service passes a
+        # state-gated sink (Session.ingest) so paused/pre-start data is dropped, not written.
+        self.emit_fn = emit_fn or core.ingest
         self.managed: dict[str, Managed] = {}
         self._watchdog: Optional[threading.Thread] = None
         self._watchdog_stop = threading.Event()
@@ -63,7 +67,7 @@ class AdapterSupervisor:
             m.stream_ids.append(spec.id)
             self.on_event("slot_added", {"node_id": node_id, "slot_id": spec.id})
 
-        ctx = AdapterContext(emit_fn=self.core.ingest, now_mono_ns=self.clock.now_mono_ns,
+        ctx = AdapterContext(emit_fn=self.emit_fn, now_mono_ns=self.clock.now_mono_ns,
                              register_fn=_register, config=config or {}, instance_id=instance_id)
         adapter.open(ctx)
         for spec in adapter.resolve_streams():

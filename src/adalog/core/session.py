@@ -88,6 +88,7 @@ class Session:
         prov.user_id = user
         s = cls(sdir, clock, session_id=sid, subject=subject or Subject(id=user), provenance=prov,
                 label=label, tags=tags)
+        s.core = RecordingCore(sdir, clock)  # created up front so a supervisor can add streams
         (sdir / LOCK_NAME).write_text("recording", encoding="utf-8")
         s._events_fh = open(sdir / EVENTS_NAME, "ab", buffering=0)
         return s
@@ -108,15 +109,27 @@ class Session:
 
     # ---- FSM ----
     def arm(self, specs: list[StreamSpec]) -> None:
+        """Direct path: add the given streams to the core, then commit the draft manifest."""
         if self.state != CREATED:
             raise RuntimeError(f"arm requires state {CREATED}, in {self.state}")
         if not specs:
             raise RuntimeError("arm requires >= 1 stream")
-        self.core = RecordingCore(self.dir, self.clock)
         for spec in specs:
             self.specs[spec.id] = spec
             self.core.add_stream(spec, provenance=getattr(spec, "_provenance", "host_arrival"),
                                  adapter=getattr(spec, "_adapter", None), device=getattr(spec, "_device", None))
+        self.commit_draft()
+
+    def commit_draft(self) -> None:
+        """Service path: streams already added to the core (e.g. by a supervisor). Write the
+        draft manifest from the core's current streams and move to armed."""
+        if self.state != CREATED:
+            raise RuntimeError(f"commit_draft requires state {CREATED}, in {self.state}")
+        specs = self.core.specs()
+        if not specs:
+            raise RuntimeError("commit_draft requires >= 1 stream")
+        for spec in specs:
+            self.specs.setdefault(spec.id, spec)
         self._write_manifest(status="recording", streams=[_draft_stream_entry(s) for s in specs])
         self.state = ARMED
 
