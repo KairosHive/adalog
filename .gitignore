@@ -7,19 +7,21 @@ __pycache__/
 *.so
 
 # Distribution / packaging
+# NOTE: anchor these to the repo root with a leading "/" — a bare `lib/` also matches
+# frontend/src/lib/ and was silently ignoring the entire web frontend.
 .Python
-build/
+/build/
 develop-eggs/
-dist/
+/dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
+/lib/
+/lib64/
+/parts/
+/sdist/
+/var/
+/wheels/
 share/python-wheels/
 *.egg-info/
 .installed.cfg

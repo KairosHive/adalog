@@ -140,6 +140,9 @@ class Session:
             raise RuntimeError(f"add_stream requires armed/recording, in {self.state}")
         self.specs[spec.id] = spec
         self.core.add_stream(spec, provenance=provenance, adapter=adapter, device=device)
+        # refresh the draft manifest so a crash before stop still recovers this late stream
+        self._write_manifest(status="recording",
+                             streams=[_draft_stream_entry(s) for s in self.core.specs()])
 
     def start(self) -> None:
         if self.state != ARMED:
@@ -148,11 +151,13 @@ class Session:
         self._event("start")
 
     def ingest(self, packet: StreamPacket) -> bool:
-        """Returns True if written, False if dropped (paused / not recording)."""
-        if self.state != RECORDING:
+        """Feed a packet. The monitor plane always sees it (live preview while armed/paused);
+        the lossless disk path runs only while RECORDING. Returns True iff written to disk."""
+        if self.core is None or packet.stream_id not in self.core._streams:
             return False
-        self.core.ingest(packet)
-        return True
+        record = self.state == RECORDING
+        self.core.ingest(packet, to_disk=record)
+        return record
 
     def pause(self) -> None:
         if self.state != RECORDING:

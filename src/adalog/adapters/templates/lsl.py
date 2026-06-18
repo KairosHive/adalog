@@ -7,6 +7,7 @@ devices (e.g. Muse EEG/PPG/ACC). pylsl is lazy-imported inside methods.
 from __future__ import annotations
 
 import threading
+from collections import deque
 
 import numpy as np
 
@@ -20,6 +21,7 @@ class LSLDevice(DeviceAdapter):
     template_name = "lsl"
     provenance = "device_lsl"
     pull_chunk_max = 256
+    quality_window = 0   # samples of recent signal to retain for status()/quality; 0 = off
 
     @staticmethod
     def config_schema():
@@ -89,6 +91,9 @@ class LSLDevice(DeviceAdapter):
         self._units = "uV"
         self._seq = 0
         self._got = 0
+        # rolling buffer of recent samples (rows = samples, cols = channels) for live
+        # signal-quality in status(); auto-trims via deque maxlen. off when window == 0.
+        self._recent: deque = deque(maxlen=self.quality_window or 1)
 
     def start(self):
         self._running.set()
@@ -108,6 +113,8 @@ class LSLDevice(DeviceAdapter):
                 last_corr = now
             per_sample_ts = [int((s + corr) * 1e9) for s in stamps]
             data = np.asarray(samples, dtype=np.float32)
+            if self.quality_window:
+                self._recent.extend(data)   # retain recent rows for quality/status
             self.ctx.emit(StreamPacket(stream_id=sid, seq=self._seq, payload=data, n_samples=len(stamps),
                                        device_ts_ns=per_sample_ts[0], recv_mono_ns=now,
                                        per_sample_ts=per_sample_ts))

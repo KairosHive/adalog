@@ -90,48 +90,56 @@ class BoundedRing:
 
 
 class WalRing:
-    """Bounded append-only on-disk spill (transient; pickled frames)."""
+    """Bounded append-only on-disk spill (transient; pickled frames).
+
+    ``append`` (producer thread) and ``drain_all`` (writer thread) are mutually exclusive
+    under a lock: ``drain_all`` reads every frame then truncates atomically, so a frame
+    appended concurrently is never read-then-truncated away (the silent-loss race)."""
 
     def __init__(self, path: Path, max_bytes: int):
         self.path = Path(path)
         self.max_bytes = max_bytes
         self._fh = None
         self._bytes = 0
+        self._lock = threading.Lock()
 
     def open(self) -> None:
         self._fh = open(self.path, "wb")
 
     def append(self, item) -> bool:
         blob = pickle.dumps(item, protocol=pickle.HIGHEST_PROTOCOL)
-        if self._bytes + len(blob) + 4 > self.max_bytes:
-            return False
-        self._fh.write(len(blob).to_bytes(4, "big"))
-        self._fh.write(blob)
-        self._fh.flush()
-        self._bytes += len(blob) + 4
-        return True
-
-    def drain(self):
-        """Yield all spilled frames, then reset the WAL."""
-        if self._fh:
+        with self._lock:
+            if self._bytes + len(blob) + 4 > self.max_bytes:
+                return False
+            self._fh.write(len(blob).to_bytes(4, "big"))
+            self._fh.write(blob)
             self._fh.flush()
-        if not self.path.exists():
-            return
-        with open(self.path, "rb") as fh:
-            while True:
-                hdr = fh.read(4)
-                if len(hdr) < 4:
-                    break
-                n = int.from_bytes(hdr, "big")
-                body = fh.read(n)
-                if len(body) < n:
-                    break  # torn tail of WAL — stop
-                yield pickle.loads(body)
-        # reset
-        if self._fh:
-            self._fh.seek(0)
-            self._fh.truncate(0)
-        self._bytes = 0
+            self._bytes += len(blob) + 4
+            return True
+
+    def drain_all(self) -> list:
+        """Read all spilled frames (in append order) then reset the WAL — atomic vs append."""
+        with self._lock:
+            if self._fh:
+                self._fh.flush()
+            if self._bytes == 0 or not self.path.exists():
+                return []
+            items = []
+            with open(self.path, "rb") as fh:
+                while True:
+                    hdr = fh.read(4)
+                    if len(hdr) < 4:
+                        break
+                    n = int.from_bytes(hdr, "big")
+                    body = fh.read(n)
+                    if len(body) < n:
+                        break  # torn tail of WAL — stop
+                    items.append(pickle.loads(body))
+            if self._fh:
+                self._fh.seek(0)
+                self._fh.truncate(0)
+            self._bytes = 0
+            return items
 
     def close(self) -> None:
         if self._fh:
@@ -142,7 +150,8 @@ class WalRing:
             pass
 
     def __len__(self) -> int:
-        return self._bytes
+        with self._lock:
+            return self._bytes
 
 
 @dataclass
@@ -176,10 +185,22 @@ class StreamPipe:
     def submit(self, item: _Item) -> None:
         self._produced += item.n_samples
         if self.regime == BP_SPILL:
-            if self.ring.push(item):
+            # Preserve global order: once anything is in the WAL, keep spilling there until
+            # the writer has fully drained it — so ring items are always strictly older than
+            # WAL items and never interleave. Use the ring only while the WAL is empty.
+            if self.wal is None:
+                if self.ring.push(item):
+                    return
+                self._count_drop(item)
                 return
-            if self.wal is not None and self.wal.append(item):
+            if len(self.wal) == 0 and self.ring.push(item):
                 return
+            try:
+                if self.wal.append(item):
+                    return
+            except Exception:
+                pass  # hard disk write error -> degrade to a counted drop, never raise into
+                      # the realtime producer (e.g. the PortAudio callback) and abort the stream
             self._count_drop(item)
         elif self.regime == BP_BLOCK:
             self.ring.push_blocking(item)
@@ -215,12 +236,15 @@ class StreamPipe:
                     break
                 continue
             self._write(item)
-            self._drain_wal()
+            # Drain spilled frames only once the ring is empty, so all (older) ring items
+            # are written before any (newer) WAL items — preserving sample order.
+            if len(self.ring) == 0:
+                self._drain_wal()
 
     def _drain_wal(self) -> None:
-        if self.wal is None or len(self.wal) == 0:
+        if self.wal is None:
             return
-        for item in self.wal.drain():
+        for item in self.wal.drain_all():
             self._write(item)
 
     def _write(self, item: _Item) -> None:

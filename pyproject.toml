@@ -61,7 +61,11 @@ adalog = ["assets/*", "sense/web/**/*"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 timeout = 60
-filterwarnings = ["ignore::DeprecationWarning"]
+filterwarnings = [
+  "ignore::DeprecationWarning",
+  # benign oscpy listener-thread EBADF on server teardown (see tests/sense/test_osc_capture.py)
+  'ignore:.*_run_listener:pytest.PytestUnhandledThreadExceptionWarning',
+]
 markers = ["e2e: browser end-to-end tests (need a built frontend + Playwright chromium)"]
 
 [tool.black]

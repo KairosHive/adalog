@@ -8,6 +8,7 @@ counted drops, and reconcile counts).
 """
 from __future__ import annotations
 
+import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Optional
@@ -38,7 +39,7 @@ class _Stream:
 
 def _data_filename(spec: StreamSpec) -> str:
     ext = {"arrow_ipc_stream": "arrow", "wav": "wav", "jsonl": "ndjson", "csv_ts": "csv",
-           "pentrace": "ndjson", "png": "png", "midi": "mid"}.get(spec.encoding, "dat")
+           "pentrace": "ndjson", "png": "png"}.get(spec.encoding, "dat")
     return f"{spec.id}.{ext}"
 
 
@@ -49,6 +50,9 @@ class RecordingCore:
         self.ring_capacity = ring_capacity
         self._streams: dict[str, _Stream] = {}
         self._finalized = False
+        # taps are added/removed from the bridge event-loop thread and iterated from each
+        # adapter's ingest thread — guard the lists so iteration sees a stable snapshot.
+        self._taps_lock = threading.Lock()
 
     # ---- stream lifecycle ----
     def add_stream(self, spec: StreamSpec, *, provenance: str = PROV_HOST_ARRIVAL,
@@ -83,7 +87,9 @@ class RecordingCore:
             st.segments += 1
 
     # ---- ingest (the hot path) ----
-    def ingest(self, packet: StreamPacket) -> None:
+    def ingest(self, packet: StreamPacket, *, to_disk: bool = True) -> None:
+        """Ingest a packet. The monitor plane ALWAYS sees it (live preview, even before
+        recording); the lossless disk path runs only when ``to_disk`` (i.e. while recording)."""
         st = self._streams.get(packet.stream_id)
         if st is None:
             raise KeyError(f"unknown stream {packet.stream_id!r}")
@@ -91,12 +97,15 @@ class RecordingCore:
         recv = packet.recv_mono_ns if packet.recv_mono_ns is not None else self.clock.now_mono_ns()
         if packet.device_ts_ns is not None:
             st.device_clock.update(int(packet.device_ts_ns), recv)
-        ts_s = self._session_times(st, packet, recv)
-        st.pipe.submit(_Item(payload=packet.payload, ts_s=ts_s, seq=packet.seq,
-                             n_samples=packet.n_samples, t0=(ts_s[0] if ts_s else self.clock.mono_to_t(recv))))
-        # monitor plane (separate, best-effort, must never break recording)
+        if to_disk:
+            ts_s = self._session_times(st, packet, recv)
+            st.pipe.submit(_Item(payload=packet.payload, ts_s=ts_s, seq=packet.seq,
+                                 n_samples=packet.n_samples, t0=(ts_s[0] if ts_s else self.clock.mono_to_t(recv))))
+        # monitor plane (separate, best-effort, must never break recording) — always on
         st.last_packet = packet
-        for cb in st.taps:
+        with self._taps_lock:
+            taps = tuple(st.taps)          # stable snapshot vs concurrent tap/untap
+        for cb in taps:
             try:
                 cb(packet)
             except Exception:
@@ -112,7 +121,22 @@ class RecordingCore:
 
     # ---- monitor plane ----
     def monitor_tap(self, stream_id: str, cb: Callable[[StreamPacket], None]) -> None:
-        self._streams[stream_id].taps.append(cb)
+        st = self._streams.get(stream_id)
+        if st is None:
+            return
+        with self._taps_lock:
+            st.taps.append(cb)
+
+    def monitor_untap(self, stream_id: str, cb: Callable[[StreamPacket], None]) -> None:
+        """Remove a previously-registered tap (e.g. when a data-plane socket closes)."""
+        st = self._streams.get(stream_id)
+        if st is None:
+            return
+        with self._taps_lock:
+            try:
+                st.taps.remove(cb)
+            except ValueError:
+                pass
 
     def latest(self, stream_id: str) -> Optional[StreamPacket]:
         st = self._streams.get(stream_id)
@@ -148,3 +172,8 @@ class RecordingCore:
 
     def counts(self) -> dict[str, dict]:
         return {sid: st.counts for sid, st in self._streams.items()}
+
+    def live_counts(self) -> dict[str, dict]:
+        """Per-stream produced/persisted counts live (before finalize) — for previews/tests."""
+        return {sid: {"produced": st.pipe._produced, "persisted": st.pipe._persisted}
+                for sid, st in self._streams.items()}

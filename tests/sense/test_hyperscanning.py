@@ -20,8 +20,8 @@ def _make_inlet(start):
         def __init__(self): self.n = 0
         def info(self): return _FInfo()
         def pull_chunk(self, timeout, max_samples):
-            if self.n >= 3:
-                return [], []
+            import time as _t
+            _t.sleep(0.004)  # stream continuously so preview + recording both see data
             base = start + self.n * (4 / 256.0)
             self.n += 1
             return [[1.0, 2.0, 3.0, 4.0] for _ in range(4)], [base + i / 256.0 for i in range(4)]

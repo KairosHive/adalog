@@ -6,6 +6,7 @@
 	import { listPanelTypes } from '$lib/workspace/registry';
 	import { setupWorkspace } from '$lib/app/panels';
 	import { recorder } from '$lib/app/session.svelte';
+	import Transport from '$lib/app/Transport.svelte';
 
 	let ready = $state(false);
 	let error = $state<string | null>(null);
@@ -40,7 +41,7 @@
 		addOpen = false;
 		const active = ws.activePanelId;
 		if (!active) return;
-		ws.split(active, 'row', false, typeId); // new panel of the chosen type, to the right
+		ws.split(active, 'row', false, 0.5, typeId); // new panel of the chosen type, to the right
 	}
 </script>
 
@@ -74,6 +75,8 @@
 
 	{#if error}<div class="banner">{error}</div>{/if}
 
+	<Transport />
+
 	<div class="tabs"><WorkspaceTabs /></div>
 	<main class="work">
 		{#if ready}<WorkspaceView />{/if}
@@ -83,9 +86,14 @@
 </div>
 
 <style>
-	.shell { display: flex; flex-direction: column; height: 100vh; background: var(--ink); }
+	/* Flex column: topbar / transport / tabs are auto-height; .work takes the rest. The work
+	   region is itself a flex container (min-height:0) so the panel workspace deterministically
+	   fills the remaining viewport height — the bug that crammed panels into the top was .work
+	   being flex:1 but not a flex container, so its child couldn't stretch. */
+	.shell { display: flex; flex-direction: column; height: 100dvh;
+		background: var(--ink); overflow: hidden; }
 	.topbar { display: flex; align-items: center; justify-content: space-between;
-		padding: 10px 16px; border-bottom: 1px solid var(--line); gap: 16px; }
+		padding: 10px 16px; border-bottom: 1px solid var(--line); gap: 16px; flex: none; }
 	.brand { display: flex; align-items: baseline; gap: 12px; }
 	.logo { font-size: 17px; font-weight: 700; letter-spacing: 0.02em; }
 	.logo .accent { color: var(--signal); }
@@ -104,8 +112,8 @@
 	.conn .dot.on { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
 	.banner { background: rgba(255,92,108,0.12); border-bottom: 1px solid var(--bad);
 		color: var(--text); padding: 8px 16px; font-size: 13px; }
-	.tabs { border-bottom: 1px solid var(--line); }
-	.work { flex: 1; min-height: 0; }
+	.tabs { border-bottom: 1px solid var(--line); flex: none; }
+	.work { flex: 1; min-height: 0; min-width: 0; display: flex; }
 	.toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); z-index: 300;
 		background: var(--surface-3); border: 1px solid var(--bad); color: var(--text);
 		padding: 10px 16px; border-radius: var(--r); box-shadow: var(--shadow-2); font-size: 13px; max-width: 70vw; }

@@ -101,16 +101,31 @@ def test_text_word_onset():
     assert emitted[0].device_ts_ns == 42
 
 
+def test_text_final_dump_to_text_full_stream():
+    emitted = []
+    a = TextAdapter()
+    a.open(_ctx(emitted))
+    assert {s.id for s in a.declare_streams()} == {"text", "text_full"}
+    a.on_ingest({"kind": "final", "text": "hello world", "t_browser_ns": 9})
+    assert emitted[0].stream_id == "text_full"
+    assert emitted[0].payload == {"text": "hello world"}
+    # empty final text is dropped
+    assert a.on_ingest({"kind": "final", "text": ""}) == 0
+
+
 def test_drawing_pen_and_snapshot():
     import base64
     emitted = []
     a = DrawingAdapter()
     a.open(_ctx(emitted))
-    a.on_ingest({"kind": "pen", "x": 0.5, "y": 0.6, "pressure": 0.9, "stroke_id": 3, "t_browser_ns": 1})
+    a.on_ingest({"kind": "pen", "x": 0.5, "y": 0.6, "pressure": 0.9, "stroke_id": 3,
+                 "color": "#ff0000", "width": 7, "t_browser_ns": 1})
     png = b"\x89PNG\r\n\x1a\nFAKE"
     a.on_ingest({"kind": "snapshot", "png_b64": base64.b64encode(png).decode(), "t_browser_ns": 2})
     assert emitted[0].stream_id == "pentrace"
     assert emitted[0].payload["x"] == 0.5
+    assert emitted[0].payload["color"] == "#ff0000"   # brush color captured
+    assert emitted[0].payload["width"] == 7           # brush size captured
     assert emitted[1].stream_id == "snapshot"
     assert emitted[1].payload == png
 
@@ -145,11 +160,16 @@ def test_osc_message_decode():
     emitted = []
     a = OscAdapter()
     a.ctx = _ctx(emitted)
-    a._seq = 0
+    a._seq = a._store_seq = a._count = 0
     a._on_message(b"/synth/freq", 440.0)
     a._on_message(b"/chord", 1, 2, 3)
     assert emitted[0].payload == {"address": "/synth/freq", "value": 440.0}
     assert emitted[1].payload == {"address": "/chord", "value": [1, 2, 3]}
+    # /<store_prefix>/<name> is routed to the osc_store sideband, not the main log
+    a._on_message(b"/_store/notes", b"hello world")
+    assert emitted[2].stream_id == "osc_store"
+    assert emitted[2].payload == {"filename": "notes", "content": "hello world"}
+    assert a._count == 3   # counter tallies every message (logged + stored)
 
 
 def test_osc_arm_without_backend_is_clean_device_error():

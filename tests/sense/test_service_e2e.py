@@ -20,8 +20,9 @@ class _FakeInlet:
     def __init__(self): self.n = 0
     def info(self): return _FakeInfo()
     def pull_chunk(self, timeout, max_samples):
-        if self.n >= 4:
-            return [], []
+        # stream continuously (like real hardware) so preview AND recording both see data
+        import time as _t
+        _t.sleep(0.004)
         base = 50.0 + self.n * (4 / 256.0)
         self.n += 1
         return [[1.0, 2.0, 3.0, 4.0] for _ in range(4)], [base + i / 256.0 for i in range(4)]

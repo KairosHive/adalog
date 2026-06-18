@@ -25,7 +25,9 @@ class DrawingAdapter(UiSourceDevice):
                 return 0
             return self.emit_record("pentrace", {"x": item.get("x"), "y": item.get("y"),
                                                  "pressure": item.get("pressure", 1.0),
-                                                 "stroke_id": item.get("stroke_id", 0)},
+                                                 "stroke_id": item.get("stroke_id", 0),
+                                                 "color": item.get("color", "#C792EA"),
+                                                 "width": item.get("width", 2)},
                                     item.get("t_browser_ns"))
         if kind == "snapshot":
             raw = item.get("png_b64")

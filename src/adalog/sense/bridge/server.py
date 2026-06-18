@@ -127,17 +127,32 @@ class SenseBridge:
                 queue.put_nowait(packet)
             loop.call_soon_threadsafe(_put)
 
+        # Bind tap + untap to the SAME core object: capture it now, so if the session is
+        # swapped while this socket is open, untap still targets the core we tapped (not the
+        # new session's core, which would leave an orphaned tap on the old one).
+        core = None
+        sess = self.service.session
+        if sess is not None and sess.core.has_stream(slot):
+            core = sess.core
         try:
-            if self.service.session is not None and self.service.session.core.has_stream(slot):
-                self.service.monitor_tap(slot, _tap)
+            if core is not None:
+                core.monitor_tap(slot, _tap)
             while not ws.closed:
-                packet = await queue.get()
+                # poll with a timeout so a client that disconnects mid-wait is detected (the
+                # socket's heartbeat flips ws.closed) instead of blocking here forever.
+                try:
+                    packet = await asyncio.wait_for(queue.get(), timeout=5.0)
+                except asyncio.TimeoutError:
+                    continue
                 header = {"node_id": node, "slot_id": slot, "stream_id": packet.stream_id,
                           "seq": packet.seq, "t": 0.0, "device_ts_ns": packet.device_ts_ns,
                           "timing_mode": ""}
                 await ws.send_bytes(encode_frame(header, _packet_to_data(packet)))
         except Exception:
             pass
+        finally:
+            if core is not None:
+                core.monitor_untap(slot, _tap)  # don't leave a dead tap firing forever
         return ws
 
     # ---- service events -> push to control sockets ----

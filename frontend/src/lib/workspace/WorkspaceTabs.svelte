@@ -1,0 +1,247 @@
+<!--
+  Workspace tab strip. Click to switch, double-click to rename inline, a small
+  × to close, `＋` to add.
+
+  Tabs and panels share one drag system (workspace store `dragging`): a tab
+  dragged onto another tab reorders; a tab or panel dragged onto a panel splits
+  it; and a panel dragged onto this bar becomes a new tab. The bar shows an
+  insertion marker at the drop index while a drag is over it.
+-->
+<script lang="ts">
+	import { workspace } from './workspace.svelte';
+
+	const ws = workspace();
+	const tabs = $derived(ws.state.workspaces);
+	const activeId = $derived(ws.state.activeWorkspaceId);
+
+	let editing = $state<string | null>(null);
+	let editValue = $state('');
+	let dropIndex = $state<number | null>(null);
+
+	// While a panel/tab is dragged over the bar, open a real placeholder slot at
+	// the drop index so it's clear where it'll land (and the ＋ shifts to make
+	// room) — rather than a thin insertion sliver.
+	const showPreview = $derived(!!ws.dragging && dropIndex !== null);
+
+	function startRename(id: string, name: string): void {
+		editing = id;
+		editValue = name;
+	}
+	function commitRename(): void {
+		if (editing) ws.renameTab(editing, editValue);
+		editing = null;
+	}
+	function focusInput(node: HTMLInputElement): void {
+		node.focus();
+		node.select();
+	}
+
+	function computeDropIndex(container: HTMLElement, clientX: number): number {
+		const els = Array.from(container.querySelectorAll('.tab')) as HTMLElement[];
+		for (let i = 0; i < els.length; i++) {
+			const r = els[i].getBoundingClientRect();
+			if (clientX < r.left + r.width / 2) return i;
+		}
+		return els.length;
+	}
+
+	function onBarDragOver(e: DragEvent): void {
+		if (!ws.dragging) return;
+		e.preventDefault();
+		dropIndex = computeDropIndex(e.currentTarget as HTMLElement, e.clientX);
+	}
+	function onBarDragLeave(e: DragEvent): void {
+		if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) dropIndex = null;
+	}
+	function onBarDrop(e: DragEvent): void {
+		const d = ws.dragging;
+		const idx = dropIndex ?? tabs.length;
+		dropIndex = null;
+		if (!d) return;
+		e.preventDefault();
+		if (d.kind === 'panel') {
+			ws.dropPanelOnTabBar(idx); // becomes a new tab (clears dragging itself)
+		} else {
+			const from = tabs.findIndex((t) => t.id === d.workspaceId);
+			if (from >= 0) ws.reorderTab(from, idx > from ? idx - 1 : idx);
+			ws.dragging = null;
+		}
+	}
+</script>
+
+<div
+	class="tabs"
+	data-testid="workspace-tabs"
+	class:dragover={!!ws.dragging}
+	ondragover={onBarDragOver}
+	ondragleave={onBarDragLeave}
+	ondrop={onBarDrop}
+	role="tablist"
+	tabindex="-1"
+>
+	{#each tabs as tab, i (tab.id)}
+		{#if showPreview && dropIndex === i}
+			<div class="tab-preview" aria-hidden="true"></div>
+		{/if}
+		<div
+			class="tab"
+			class:active={tab.id === activeId}
+			draggable={editing !== tab.id}
+			onclick={() => ws.selectTab(tab.id)}
+			ondblclick={() => startRename(tab.id, tab.name)}
+			ondragstart={() => (ws.dragging = { kind: 'tab', workspaceId: tab.id })}
+			ondragend={() => {
+				ws.dragging = null;
+				dropIndex = null;
+			}}
+			onkeydown={(e) => {
+				if (e.key === 'Enter' || e.key === ' ') ws.selectTab(tab.id);
+			}}
+			role="tab"
+			tabindex="0"
+			aria-selected={tab.id === activeId}
+		>
+			{#if editing === tab.id}
+				<!-- svelte-ignore a11y_autofocus -->
+				<input
+					class="rename"
+					value={editValue}
+					oninput={(e) => (editValue = e.currentTarget.value)}
+					onblur={commitRename}
+					onkeydown={(e) => {
+						if (e.key === 'Enter') commitRename();
+						else if (e.key === 'Escape') editing = null;
+					}}
+					use:focusInput
+				/>
+			{:else}
+				<span class="name">{tab.name}</span>
+				{#if tabs.length > 1}
+					<button
+						class="close"
+						title="Close tab"
+						aria-label="Close tab"
+						onclick={(e) => {
+							e.stopPropagation();
+							ws.closeTab(tab.id);
+						}}>✕</button
+					>
+				{/if}
+			{/if}
+		</div>
+	{/each}
+	{#if showPreview && dropIndex === tabs.length}
+		<div class="tab-preview" aria-hidden="true"></div>
+	{/if}
+	<button class="add" onclick={() => ws.addTab()} title="New tab" aria-label="New tab">＋</button>
+</div>
+
+<style>
+	.tabs {
+		/* Lives inside the TopBar's central slot: fills the slack, blends with
+		   the header (no own background / bottom border), matches its height. */
+		display: flex;
+		align-items: center;
+		gap: 2px;
+		height: 100%;
+		flex: 1 1 auto;
+		min-width: 0;
+		padding: 0 4px;
+		background: transparent;
+		overflow-x: auto;
+		overflow-y: hidden;
+		scrollbar-width: thin;
+	}
+	.tabs.dragover {
+		background: color-mix(in srgb, var(--accent) 7%, transparent);
+		border-radius: var(--radius-sm);
+	}
+	.tab {
+		display: flex;
+		align-items: center;
+		gap: 0;
+		/* Even padding on all sides; vertically centred in the header (no margin)
+		   so the pill sits neatly inside the bar rather than filling its height. */
+		padding: 5px 10px;
+		border-radius: var(--radius-sm);
+		color: var(--text-dim);
+		font-size: 0.82rem;
+		line-height: 1;
+		white-space: nowrap;
+		cursor: pointer;
+		user-select: none;
+		border: 1px solid transparent;
+	}
+	.tab:hover {
+		background: var(--bg-elev-2);
+		color: var(--text);
+	}
+	.tab.active {
+		background: var(--bg-elev-3);
+		color: var(--text);
+		border-color: var(--border);
+	}
+	/* Drop placeholder: a tab-sized slot that opens up at the drop index so the
+	   landing spot is obvious and the ＋ shifts over to make room. */
+	.tab-preview {
+		flex: 0 0 auto;
+		align-self: center;
+		width: 96px;
+		height: 26px;
+		border-radius: var(--radius-sm);
+		border: 1px dashed var(--accent);
+		background: color-mix(in srgb, var(--accent) 14%, transparent);
+	}
+	.rename {
+		width: 9ch;
+		padding: 1px 4px;
+		font: inherit;
+		font-size: 0.82rem;
+	}
+	.close {
+		display: grid;
+		place-items: center;
+		/* Collapsed when hidden so an inactive tab stays evenly padded; expands
+		   (with its left gap) only on hover / when active. */
+		width: 0;
+		height: 16px;
+		margin-left: 0;
+		overflow: hidden;
+		padding: 0;
+		font-size: 0.7rem;
+		line-height: 1;
+		background: transparent;
+		border: none;
+		border-radius: var(--radius-sm);
+		color: var(--text-faint);
+		opacity: 0;
+		cursor: pointer;
+	}
+	.tab:hover .close,
+	.tab.active .close {
+		width: 16px;
+		margin-left: 4px;
+		opacity: 1;
+	}
+	.close:hover {
+		background: var(--bg-elev-1);
+		color: var(--danger);
+	}
+	.add {
+		align-self: center;
+		width: 22px;
+		height: 22px;
+		display: grid;
+		place-items: center;
+		padding: 0;
+		background: transparent;
+		border: none;
+		border-radius: var(--radius-sm);
+		color: var(--text-dim);
+		cursor: pointer;
+	}
+	.add:hover {
+		background: var(--bg-elev-2);
+		color: var(--text);
+	}
+</style>

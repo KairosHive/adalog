@@ -1,0 +1,94 @@
+/* adalog-sense — lab-instrument console. Graphite base, amber phosphor signal,
+   record-red only when live. Mono for data/clock readouts, sans for labels. */
+:root {
+  --ink: #0C0E12;
+  --surface: #14181F;
+  --surface-2: #1C222B;
+  --surface-3: #232C38;
+  --line: #2A323D;
+  --line-bright: #3A4655;
+  --text: #E6EAF0;
+  --muted: #8A95A5;
+  --faint: #5A6473;
+
+  --signal: #FFB454;     /* amber phosphor — active / clock / packets flowing */
+  --signal-dim: #7A5A28;
+  --rec: #FF4D5E;        /* record red — live only */
+  --ok: #57D9A3;
+  --warn: #FFC862;
+  --bad: #FF5C6C;
+
+  /* per-modality channel hues (stream lanes) */
+  --ch-eeg: #6EA8FF;
+  --ch-ecg: #FF6E8A;
+  --ch-audio: #57D9A3;
+  --ch-drawing: #C792EA;
+  --ch-text: #FFB454;
+  --ch-midi: #7AE7C7;
+  --ch-osc: #E2C275;
+  --ch-meteo: #6FD0E0;
+
+  --mono: ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+  --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --r: 6px;
+  --gap: 12px;
+
+  /* ---- tokens consumed by the vendored workspace shell (Panel/Splitter/Header/Menu).
+         Without these the panel chrome renders unstyled & tiny — map them to the palette. */
+  --bg: var(--ink);
+  --bg-elev-1: var(--surface);
+  --bg-elev-2: var(--surface-2);
+  --bg-elev-3: var(--surface-3);
+  --border: var(--line);
+  --border-strong: var(--line-bright);
+  --text-dim: var(--muted);
+  --text-faint: var(--faint);
+  --accent: var(--signal);
+  --danger: var(--rec);
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --shadow-2: 0 8px 28px rgba(0, 0, 0, 0.45);
+  --splitter-size: 6px;
+  --panel-header-h: 34px;   /* roomier header (was defaulting to 26px → cramped) */
+  --z-chrome: 50;
+  --z-menu: 200;
+  --z-drag-ghost: 300;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--ink);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.eyebrow { font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--faint); }
+
+button {
+  font-family: var(--sans); font-size: 14px; color: var(--text);
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r);
+  padding: 9px 16px; cursor: pointer; transition: border-color .12s, background .12s;
+  min-height: 38px; line-height: 1.1;
+}
+button:hover:not(:disabled) { border-color: var(--line-bright); background: var(--surface-3); }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+button.primary { background: var(--signal); color: #1A1206; border-color: var(--signal); font-weight: 600; }
+button.primary:hover:not(:disabled) { filter: brightness(1.08); background: var(--signal); }
+button.danger { background: var(--rec); color: #2A0A0E; border-color: var(--rec); font-weight: 600; }
+/* the shell's own compact chrome (panel header, tabs, context menu) opts out of the min size */
+.panel-header button, .tabs button, .tab, .add, .add-item, .menu-item { min-height: 0; }
+
+input, select {
+  font-family: var(--sans); font-size: 14px; color: var(--text);
+  background: var(--ink); border: 1px solid var(--line); border-radius: var(--r); padding: 9px 11px;
+  min-height: 38px;
+}
+input:focus, select:focus { border-color: var(--signal); outline: none; }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

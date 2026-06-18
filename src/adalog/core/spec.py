@@ -26,7 +26,9 @@ ENC_JSONL = "jsonl"
 ENC_CSV_TS = "csv_ts"
 ENC_PNG = "png"
 ENC_PENTRACE = "pentrace"
-ENC_MIDI = "midi"
+# (MIDI records as crash-safe NDJSON, the durable artifact; a natural .mid SMF — which is
+#  only written on close, so it isn't crash-safe — is a downstream convert output, not a
+#  recorder encoding. So there is intentionally no ENC_MIDI writer.)
 
 # Back-pressure regimes (chosen by the template's transport class).
 BP_SPILL = "SPILL"            # realtime callbacks: lock-free handoff + WAL spill

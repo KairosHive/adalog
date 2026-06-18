@@ -73,6 +73,20 @@ def test_fsm_guards(tmp_path, fake_clock):
         s.pause()  # not recording
 
 
+def test_late_joined_stream_survives_recovery(tmp_path, fake_clock):
+    # a device armed AFTER recording started (late-join) must be in the draft manifest, so a
+    # crash before stop still recovers its stream instead of orphaning it.
+    clock = SessionClock(mono_fn=fake_clock.monotonic_ns, utc_fn=fake_clock.utc_ns)
+    s = Session.create(tmp_path / "sessions", user="u_test",
+                       session_id="01LATEJOIN0000000000000000", clock=clock)
+    s.arm([_eeg_spec()])
+    s.start()
+    s.add_stream(_text_spec())   # late join after start
+    recovered = recover_session(s.dir)
+    ids = {st.id for st in recovered.streams}
+    assert ids == {"eeg", "text"}, f"late-joined stream lost on recovery: {ids}"
+
+
 def test_crash_recovery(tmp_path, fake_clock):
     clock = SessionClock(mono_fn=fake_clock.monotonic_ns, utc_fn=fake_clock.utc_ns)
     s = Session.create(tmp_path / "sessions", user="u_test",

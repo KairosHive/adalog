@@ -52,6 +52,7 @@ class RecorderService:
         self.clock: Optional[SessionClock] = None
         self._instances: dict[str, object] = {}        # node_id -> adapter
         self._event_listeners: list[Callable[[str, dict], None]] = []
+        self._watchdog_started = False
 
     # ---- listeners (the status/telemetry plane subscribes here) ----
     def add_event_listener(self, cb: Callable[[str, dict], None]) -> None:
@@ -102,6 +103,7 @@ class RecorderService:
         self.supervisor = AdapterSupervisor(self.session.core, self.clock, on_event=self._emit_event,
                                             on_status=self._emit_status, emit_fn=self.session.ingest)
         self._instances.clear()
+        self._watchdog_started = False
         for d in (devices or []):
             self.device_arm(**d)
         return {"session_id": self.session.session_id, "state": self.session.state}
@@ -123,6 +125,12 @@ class RecorderService:
                     break
         m = self.supervisor.add(adapter, instance_id, config=config or {}, source=source)
         self._instances[m.node_id] = adapter
+        # Start streaming immediately for LIVE PREVIEW (monitors update, nothing written to
+        # disk until Record) — lets the user verify headset contact / levels before recording.
+        self.supervisor.start(m)
+        if not self._watchdog_started:
+            self.supervisor.start_watchdog(interval=0.5)
+            self._watchdog_started = True
         return {"instance_id": instance_id, "node_id": m.node_id, "streams": m.streams}
 
     def _require_session(self) -> None:
@@ -137,9 +145,9 @@ class RecorderService:
 
     def session_start(self) -> dict:
         self._require_session()
+        # adapters are already streaming for preview (started at device_arm); recording just
+        # flips the disk path on. t0 of each stream is its first sample AFTER this point.
         self.session.start()
-        self.supervisor.start_all()
-        self.supervisor.start_watchdog(interval=0.5)
         return {"state": "recording", "t0_utc_ns": self.clock.t0_utc_ns}
 
     def device_ingest(self, *, node_id: str, batch: list[dict]) -> dict:
@@ -154,14 +162,13 @@ class RecorderService:
 
     def session_pause(self) -> dict:
         self._require_session()
-        self.supervisor.pause_all()
+        # keep adapters streaming so monitors stay live; pause only gates the disk path
         self.session.pause()
         return {"state": self.session.state, "at_t": self.clock.now_s()}
 
     def session_resume(self) -> dict:
         self._require_session()
         self.session.resume()
-        self.supervisor.resume_all()
         return {"state": self.session.state, "at_t": self.clock.now_s()}
 
     def session_stop(self, *, publish: bool = False) -> dict:
@@ -190,3 +197,7 @@ class RecorderService:
 
     def monitor_tap(self, stream_id: str, cb) -> None:
         self.session.core.monitor_tap(stream_id, cb)
+
+    def monitor_untap(self, stream_id: str, cb) -> None:
+        if self.session is not None:
+            self.session.core.monitor_untap(stream_id, cb)
