@@ -6,4 +6,4 @@ from ...adapters.templates import AudioDevice
 
 
 class AudioMicAdapter(AudioDevice):
-    info = AdapterInfo(id="audio_mic", title="Microphone", category="audio", multi=True)
+    info = AdapterInfo(id="audio_mic", title="Microphone", category="audio", multi=True, backend="sounddevice")

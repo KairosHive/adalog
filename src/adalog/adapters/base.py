@@ -24,6 +24,29 @@ ST_IDLE = "idle"
 ST_PAUSED = "paused"
 
 
+class DeviceUnavailable(Exception):
+    """A device cannot be acquired: its backend package is missing, or the hardware
+    is absent/busy. Carries a user-facing, actionable message; the control layer maps
+    it to a clean DEVICE_ERROR (never a leaked INTERNAL / raw exception)."""
+
+    def __init__(self, message: str, *, backend: Optional[str] = None):
+        super().__init__(message)
+        self.backend = backend
+
+
+def require_backend(pkg: str, title: str, *, hint: Optional[str] = None):
+    """Import a device backend, raising a clean DeviceUnavailable if it's missing."""
+    import importlib
+
+    try:
+        return importlib.import_module(pkg)
+    except ImportError as exc:
+        install = hint or pkg
+        raise DeviceUnavailable(
+            f"{title}: backend '{pkg}' is not installed — run `uv sync --extra devices` "
+            f"(or `pip install {install}`).", backend=pkg) from exc
+
+
 @dataclass
 class AdapterInfo:
     id: str
@@ -31,6 +54,7 @@ class AdapterInfo:
     category: str = ""
     multi: bool = False               # multiple instances allowed
     requires: Optional[str] = None    # e.g. "browser" (unavailable in goofi-mode)
+    backend: Optional[str] = None     # pip package providing acquisition (None = always available)
 
 
 @dataclass

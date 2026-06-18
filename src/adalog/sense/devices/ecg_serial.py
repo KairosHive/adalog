@@ -8,7 +8,7 @@ from ...schema.fields import IntField, StrField
 
 
 class EcgSerialAdapter(SerialDevice):
-    info = AdapterInfo(id="ecg_serial", title="Serial ECG", category="cardio", multi=True)
+    info = AdapterInfo(id="ecg_serial", title="Serial ECG", category="cardio", multi=True, backend="serial")
 
     @staticmethod
     def config_schema():

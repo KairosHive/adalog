@@ -8,7 +8,7 @@ from ...schema.fields import StrField
 
 
 class EegMuseAdapter(LSLDevice):
-    info = AdapterInfo(id="eeg_muse", title="Muse / DSI EEG (LSL)", category="neuro", multi=True)
+    info = AdapterInfo(id="eeg_muse", title="Muse / DSI EEG (LSL)", category="neuro", multi=True, backend="pylsl")
 
     @staticmethod
     def config_schema():

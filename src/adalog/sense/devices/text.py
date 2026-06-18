@@ -14,5 +14,8 @@ class TextAdapter(UiSourceDevice):
 
     def handle_item(self, item: dict) -> int:
         if item.get("kind") == "word":
-            return self.emit_record("text", {"word": item["word"]}, item.get("t_browser_ns"))
+            word = item.get("word")
+            if not word:
+                return 0
+            return self.emit_record("text", {"word": word}, item.get("t_browser_ns"))
         return 0

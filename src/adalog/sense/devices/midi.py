@@ -14,7 +14,7 @@ from ...schema.fields import StrField
 
 
 class MidiAdapter(DeviceAdapter):
-    info = AdapterInfo(id="midi", title="MIDI", category="music", multi=True)
+    info = AdapterInfo(id="midi", title="MIDI", category="music", multi=True, backend="mido")
     template_name = "midi"
     provenance = "host_arrival"
 
@@ -34,12 +34,19 @@ class MidiAdapter(DeviceAdapter):
         return [StreamSpec(id="midi", modality="midi", encoding=ENC_JSONL, timing_mode=TIMING_PER_SAMPLE)]
 
     def _make_input(self):
-        import mido
+        from ...adapters.base import DeviceUnavailable, require_backend
+        mido = require_backend("mido", "MIDI device", hint="mido python-rtmidi")
+        require_backend("rtmidi", "MIDI device", hint="python-rtmidi")  # mido's RtMidi backend
         port = self.cfg.midi.port or None
         names = mido.get_input_names()
         if port is None and names:
             port = names[0]
-        return mido.open_input(port, callback=self._on_msg)
+        if not names:
+            raise DeviceUnavailable("MIDI device: no input ports found — connect a MIDI device.")
+        try:
+            return mido.open_input(port, callback=self._on_msg)
+        except (OSError, IOError) as exc:
+            raise DeviceUnavailable(f"MIDI port {port!r} could not be opened ({exc}).") from exc
 
     def open(self, ctx):
         super().open(ctx)

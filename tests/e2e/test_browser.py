@@ -90,6 +90,9 @@ def test_hyperscanning_record_flow_with_monitors(bridge):
         page.goto(url, wait_until="networkidle")
         page.wait_for_selector("text=backend connected", timeout=5000)
 
+        # username is required to build a personal dataset — New session is gated on it
+        assert page.locator("[data-testid=new-session]").is_disabled()
+        page.fill("[data-testid=username]", "phil")
         page.click("[data-testid=new-session]")
         page.wait_for_selector("[data-testid=arm-eeg_muse]", timeout=3000)
         # hyperscanning: two EEG subjects + one text source

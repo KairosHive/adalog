@@ -44,11 +44,15 @@ class AudioDevice(DeviceAdapter):
                            channels=[Channel(f"ch{i}", "", "float32") for i in range(self._channels)])]
 
     def _make_stream(self):
-        import sounddevice as sd
+        from ..base import DeviceUnavailable, require_backend
+        sd = require_backend("sounddevice", "Audio device", hint="sounddevice soundfile")
         dev = self.cfg.audio.device or None
-        return sd.InputStream(samplerate=self._rate, channels=self._channels,
-                              blocksize=self.cfg.audio.blocksize, dtype="float32",
-                              device=(int(dev) if dev not in (None, "") else None), callback=self._callback)
+        try:
+            return sd.InputStream(samplerate=self._rate, channels=self._channels,
+                                  blocksize=self.cfg.audio.blocksize, dtype="float32",
+                                  device=(int(dev) if dev not in (None, "") else None), callback=self._callback)
+        except Exception as exc:  # PortAudioError (native lib) / device busy / bad device
+            raise DeviceUnavailable(f"Audio input could not be opened ({exc}).") from exc
 
     def open(self, ctx):
         super().open(ctx)

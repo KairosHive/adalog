@@ -141,13 +141,28 @@ def test_midi_fake_input():
 
 
 def test_osc_message_decode():
+    # exercise pure decode logic without open() (open() fails fast when oscpy is absent)
     emitted = []
     a = OscAdapter()
-    a.open(_ctx(emitted))
+    a.ctx = _ctx(emitted)
+    a._seq = 0
     a._on_message(b"/synth/freq", 440.0)
     a._on_message(b"/chord", 1, 2, 3)
     assert emitted[0].payload == {"address": "/synth/freq", "value": 440.0}
     assert emitted[1].payload == {"address": "/chord", "value": [1, 2, 3]}
+
+
+def test_osc_arm_without_backend_is_clean_device_error():
+    # OSC must fail at arm (open), not silently in the start() thread
+    from adalog.adapters.base import DeviceUnavailable
+    import importlib.util
+    if importlib.util.find_spec("oscpy") is not None:
+        import pytest
+        pytest.skip("oscpy installed; this test covers the missing-backend path")
+    a = OscAdapter()
+    import pytest
+    with pytest.raises(DeviceUnavailable):
+        a.open(_ctx([]))
 
 
 def test_meteo_merge_and_dedup():

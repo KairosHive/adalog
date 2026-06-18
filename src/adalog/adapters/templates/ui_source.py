@@ -23,12 +23,16 @@ class UiSourceDevice(DeviceAdapter):
 
     # ---- the bridge calls this with each device_ingest message ----
     def on_ingest(self, msg: dict) -> int:
-        """Parse a device_ingest payload into packets. Returns number of samples accepted."""
+        """Parse a device_ingest payload into packets. Returns number of samples accepted.
+        One malformed item is dropped (logged), never aborting the rest of the batch."""
         batch = msg.get("batch") if isinstance(msg, dict) else None
         items = batch if batch is not None else [msg]
         accepted = 0
         for item in items:
-            accepted += self.handle_item(item)
+            try:
+                accepted += self.handle_item(item)
+            except Exception as exc:  # bad client item — drop+log, don't bubble to INTERNAL
+                self.ctx.log.warning("dropped malformed ingest item: %r", exc)
         return accepted
 
     # ---- author hook ----

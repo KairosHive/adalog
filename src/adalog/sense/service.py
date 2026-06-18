@@ -23,6 +23,22 @@ from .devices import BUILTIN
 log = logging.getLogger("adalog.sense.service")
 
 
+class UnknownAdapter(Exception):
+    """Requested adapter id is not in the registry (-> NOT_FOUND)."""
+
+
+def _backend_available(cls) -> bool:
+    """Cheap availability check — is the adapter's backend importable? (no heavy import)."""
+    import importlib.util
+    pkg = getattr(cls.info, "backend", None)
+    if not pkg:
+        return True
+    try:
+        return importlib.util.find_spec(pkg) is not None
+    except (ImportError, ValueError):
+        return False
+
+
 class RecorderService:
     def __init__(self, *, sessions_root: Optional[Path] = None, registry: Optional[AdapterRegistry] = None,
                  config: Optional[ConfigStore] = None, store: Optional[object] = None,
@@ -53,7 +69,15 @@ class RecorderService:
 
     # ---- catalog / discovery ----
     def list_devices(self) -> list[dict]:
-        return self.registry.catalog()
+        cat = self.registry.catalog()
+        for entry in cat:
+            try:
+                cls = self.registry.get(entry["id"])
+                entry["backend"] = getattr(cls.info, "backend", None)
+                entry["available"] = _backend_available(cls)
+            except KeyError:
+                entry["available"] = True
+        return cat
 
     def discover(self, adapter_id: Optional[str] = None) -> dict[str, list[dict]]:
         ids = [adapter_id] if adapter_id else self.registry.ids()
@@ -84,7 +108,12 @@ class RecorderService:
 
     def device_arm(self, *, adapter_id: str, instance_id: str = "0", source_id: Optional[str] = None,
                    config: Optional[dict] = None) -> dict:
-        cls = self.registry.get(adapter_id)
+        if self.session is None:
+            raise RuntimeError("no active session — create one before arming devices")
+        try:
+            cls = self.registry.get(adapter_id)
+        except KeyError:
+            raise UnknownAdapter(f"unknown device {adapter_id!r}")
         adapter = cls()
         source = None
         if source_id:
@@ -96,12 +125,18 @@ class RecorderService:
         self._instances[m.node_id] = adapter
         return {"instance_id": instance_id, "node_id": m.node_id, "streams": m.streams}
 
+    def _require_session(self) -> None:
+        if self.session is None:
+            raise RuntimeError("no active session")
+
     def session_arm(self) -> dict:
+        self._require_session()
         self.session.commit_draft()
         return {"state": self.session.state,
                 "devices": [{"node_id": nid, "state": m.state} for nid, m in self.supervisor.managed.items()]}
 
     def session_start(self) -> dict:
+        self._require_session()
         self.session.start()
         self.supervisor.start_all()
         self.supervisor.start_watchdog(interval=0.5)
@@ -118,16 +153,19 @@ class RecorderService:
         return {"accepted": int(accepted), "dropped": len(batch) - int(accepted)}
 
     def session_pause(self) -> dict:
+        self._require_session()
         self.supervisor.pause_all()
         self.session.pause()
         return {"state": self.session.state, "at_t": self.clock.now_s()}
 
     def session_resume(self) -> dict:
+        self._require_session()
         self.session.resume()
         self.supervisor.resume_all()
         return {"state": self.session.state, "at_t": self.clock.now_s()}
 
     def session_stop(self, *, publish: bool = False) -> dict:
+        self._require_session()
         self.supervisor.stop_all()
         manifest = self.session.stop()
         # persist last-used device set + subject defaults for next launch

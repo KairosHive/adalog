@@ -7,7 +7,8 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from ..service import RecorderService
+from ...adapters.base import DeviceUnavailable
+from ..service import RecorderService, UnknownAdapter
 
 Handler = Callable[[RecorderService, dict], Any]
 
@@ -61,9 +62,13 @@ def dispatch(svc: RecorderService, msg: dict) -> dict:
     try:
         result = handler(svc, args)
         return {"id": rid, "ok": True, "result": result}
+    except DeviceUnavailable as exc:           # missing backend / device absent or busy
+        return {"id": rid, "ok": False, "error": {"code": "DEVICE_ERROR", "message": str(exc)}}
+    except UnknownAdapter as exc:              # no such device id
+        return {"id": rid, "ok": False, "error": {"code": "NOT_FOUND", "message": str(exc)}}
     except KeyError as exc:
         return {"id": rid, "ok": False, "error": {"code": "BAD_REQUEST", "message": str(exc)}}
-    except RuntimeError as exc:
+    except RuntimeError as exc:                # precondition (no session, wrong state, …)
         return {"id": rid, "ok": False, "error": {"code": "PRECONDITION", "message": str(exc)}}
-    except Exception as exc:  # pragma: no cover - defensive
-        return {"id": rid, "ok": False, "error": {"code": "INTERNAL", "message": repr(exc)}}
+    except Exception as exc:                   # genuine bug — clean message, no class-name repr leak
+        return {"id": rid, "ok": False, "error": {"code": "INTERNAL", "message": str(exc) or type(exc).__name__}}

@@ -51,7 +51,8 @@ class LSLDevice(DeviceAdapter):
 
     # ---- transport factory (overridable in tests) ----
     def _make_inlet(self):
-        import pylsl
+        from ..base import DeviceUnavailable, require_backend
+        pylsl = require_backend("pylsl", "LSL device", hint="pylsl (also needs liblsl)")
         q = self.default_query()
         src = q.get("source") or ""
         streams = pylsl.resolve_streams(wait_time=1.0)
@@ -61,7 +62,8 @@ class LSLDevice(DeviceAdapter):
                 chosen = s
                 break
         if chosen is None:
-            raise RuntimeError(f"no LSL stream matching {src!r}")
+            raise DeviceUnavailable(
+                f"No LSL stream{f' matching {src!r}' if src else ''} found — is the device streaming?")
         return pylsl.StreamInlet(chosen, max_chunklen=self.pull_chunk_max)
 
     def _inlet_info(self):

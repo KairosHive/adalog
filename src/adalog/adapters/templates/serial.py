@@ -34,8 +34,15 @@ class SerialDevice(DeviceAdapter):
         raise NotImplementedError
 
     def _make_serial(self):
-        import serial
-        return serial.Serial(self.cfg.serial.port, int(self.cfg.serial.baud), timeout=0.2)
+        from ..base import DeviceUnavailable, require_backend
+        serial = require_backend("serial", "Serial device", hint="pyserial")
+        port = self.cfg.serial.port
+        if not port:
+            raise DeviceUnavailable("Serial device: no port configured — set the serial port first.")
+        try:
+            return serial.Serial(port, int(self.cfg.serial.baud), timeout=0.2)
+        except (serial.SerialException, OSError) as exc:
+            raise DeviceUnavailable(f"Serial port {port!r} not found or busy ({exc}).") from exc
 
     def open(self, ctx):
         super().open(ctx)
