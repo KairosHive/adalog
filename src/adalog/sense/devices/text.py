@@ -7,7 +7,7 @@ from ...core.spec import ENC_JSONL, TIMING_PER_SAMPLE, StreamSpec
 
 
 class TextAdapter(UiSourceDevice):
-    info = AdapterInfo(id="text", title="Text", category="human", requires="browser")
+    info = AdapterInfo(id="text", title="Text", category="human", requires="browser", multi=True)
 
     def declare_streams(self):
         return [StreamSpec(id="text", modality="text", encoding=ENC_JSONL, timing_mode=TIMING_PER_SAMPLE)]

@@ -94,10 +94,7 @@ class RecorderService:
                     break
         m = self.supervisor.add(adapter, instance_id, config=config or {}, source=source)
         self._instances[m.node_id] = adapter
-        return {"instance_id": instance_id, "node_id": m.node_id,
-                "streams": [{"id": s.id, "modality": s.modality, "encoding": s.encoding,
-                             "timing_mode": s.timing_mode, "channels": s.channel_names}
-                            for s in adapter.resolve_streams()]}
+        return {"instance_id": instance_id, "node_id": m.node_id, "streams": m.streams}
 
     def session_arm(self) -> dict:
         self.session.commit_draft()

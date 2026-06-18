@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import threading
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Callable, Optional
 
 from ..core.manifest import AdapterRef, DeviceRef
@@ -35,6 +35,7 @@ class Managed:
     instance_id: str
     node_id: str
     stream_ids: list[str] = field(default_factory=list)
+    streams: list[dict] = field(default_factory=list)  # session-id'd descriptors for the UI
     thread: Optional[threading.Thread] = None
     state: str = ST_IDLE
     error: Optional[str] = None
@@ -61,27 +62,51 @@ class AdapterSupervisor:
             source: Optional[DiscoveredSource] = None) -> Managed:
         node_id = f"{adapter.info.id}#{instance_id}"
         m = Managed(adapter=adapter, instance_id=instance_id, node_id=node_id)
+        # Map each adapter-local stream id to a session-unique id so multiple instances
+        # of one adapter (hyperscanning) never collide in the RecordingCore. Instance 0
+        # keeps the clean local id; later instances are suffixed with the instance id.
+        id_map: dict[str, str] = {}
 
-        def _register(spec: StreamSpec) -> None:  # dynamic streams (OSC)
-            self._add_core_stream(adapter, spec, source)
-            m.stream_ids.append(spec.id)
-            self.on_event("slot_added", {"node_id": node_id, "slot_id": spec.id})
+        def _session_id(local_id: str) -> str:
+            return local_id if instance_id == "0" else f"{local_id}-{instance_id}"
 
-        ctx = AdapterContext(emit_fn=self.emit_fn, now_mono_ns=self.clock.now_mono_ns,
+        def _emit(packet) -> None:  # translate local stream id -> session stream id
+            mapped = id_map.get(packet.stream_id)
+            if mapped is not None and mapped != packet.stream_id:
+                packet.stream_id = mapped
+            self.emit_fn(packet)
+
+        def _descriptor(spec: StreamSpec, sid: str) -> dict:
+            return {"id": sid, "local_id": spec.id, "modality": spec.modality, "encoding": spec.encoding,
+                    "timing_mode": spec.timing_mode, "channels": spec.channel_names}
+
+        def _register(spec: StreamSpec) -> None:  # dynamic streams (OSC), runtime
+            sid = self._add_core_stream(adapter, spec, source, _session_id(spec.id))
+            id_map[spec.id] = sid
+            m.stream_ids.append(sid)
+            m.streams.append(_descriptor(spec, sid))
+            self.on_event("slot_added", {"node_id": node_id, "slot_id": sid})
+
+        ctx = AdapterContext(emit_fn=_emit, now_mono_ns=self.clock.now_mono_ns,
                              register_fn=_register, config=config or {}, instance_id=instance_id)
         adapter.open(ctx)
         for spec in adapter.resolve_streams():
-            self._add_core_stream(adapter, spec, source)
-            m.stream_ids.append(spec.id)
+            sid = self._add_core_stream(adapter, spec, source, _session_id(spec.id))
+            id_map[spec.id] = sid
+            m.stream_ids.append(sid)
+            m.streams.append(_descriptor(spec, sid))
         m.state = ST_IDLE
         self.managed[node_id] = m
         return m
 
-    def _add_core_stream(self, adapter: DeviceAdapter, spec: StreamSpec, source) -> None:
+    def _add_core_stream(self, adapter: DeviceAdapter, spec: StreamSpec, source, session_id: str) -> str:
+        """Add the stream to the core under a session-unique id; return that id."""
+        spec_for_session = replace(spec, id=session_id) if session_id != spec.id else spec
         adapter_ref = AdapterRef(id=adapter.info.id, version=adapter.version, template=adapter.template_name)
         device_ref = DeviceRef(name=(source.label if source else None),
                                model=((source.detail or {}).get("model") if source and source.detail else None))
-        self.core.add_stream(spec, provenance=adapter.provenance, adapter=adapter_ref, device=device_ref)
+        self.core.add_stream(spec_for_session, provenance=adapter.provenance, adapter=adapter_ref, device=device_ref)
+        return session_id
 
     # ---- start / stop ----
     def start(self, m: Managed) -> None:

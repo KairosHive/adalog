@@ -10,7 +10,7 @@ from ...core.spec import ENC_PENTRACE, ENC_PNG, TIMING_EVENT, TIMING_PER_SAMPLE,
 
 
 class DrawingAdapter(UiSourceDevice):
-    info = AdapterInfo(id="drawing", title="Drawing", category="human", requires="browser")
+    info = AdapterInfo(id="drawing", title="Drawing", category="human", requires="browser", multi=True)
 
     def declare_streams(self):
         return [
